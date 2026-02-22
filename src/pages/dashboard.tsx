@@ -515,24 +515,39 @@ export function DashboardPage() {
               </div>
             }
           >
-            <div className="h-[400px]">
+            <div className="h-[440px] rounded-xl overflow-hidden bg-gradient-to-b from-[var(--muted)]/30 to-transparent p-2">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 70, left: 0, bottom: 0 }}>
+                <AreaChart key={revenueRange} data={chartData} margin={{ top: 16, right: 72, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="pmsGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.55} />
+                      <stop offset="60%" stopColor="#22c55e" stopOpacity={0.12} />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="agoGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.45} />
+                      <stop offset="60%" stopColor="#3b82f6" stopOpacity={0.1} />
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="lubGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.35} />
+                      <stop offset="60%" stopColor="#f59e0b" stopOpacity={0.08} />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
                     </linearGradient>
+                    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="2.5" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <filter id="glowAmber" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="2" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" strokeOpacity={0.5} />
                   <XAxis
                     dataKey="label"
                     tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
@@ -565,8 +580,14 @@ export function DashboardPage() {
                     dataKey="pmsRevenue"
                     name="PMS Revenue"
                     stroke="#22c55e"
+                    strokeWidth={3.5}
                     fill="url(#pmsGrad)"
-                    strokeWidth={2.5}
+                    isAnimationActive
+                    animationDuration={1200}
+                    animationEasing="ease-out"
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#22c55e' }}
+                    filter="url(#glowGreen)"
                   />
                   <Area
                     yAxisId="left"
@@ -574,8 +595,15 @@ export function DashboardPage() {
                     dataKey="agoRevenue"
                     name="AGO Revenue"
                     stroke="#3b82f6"
+                    strokeWidth={3}
                     fill="url(#agoGrad)"
-                    strokeWidth={2}
+                    isAnimationActive
+                    animationDuration={1200}
+                    animationEasing="ease-out"
+                    animationBegin={100}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }}
+                    filter="url(#glowBlue)"
                   />
                   <Area
                     yAxisId="right"
@@ -583,9 +611,16 @@ export function DashboardPage() {
                     dataKey="lubricantRevenue"
                     name="Lubricant Revenue"
                     stroke="#f59e0b"
+                    strokeWidth={2.5}
                     fill="url(#lubGrad)"
-                    strokeWidth={2}
-                    strokeDasharray="6 4"
+                    strokeDasharray="8 4"
+                    isAnimationActive
+                    animationDuration={1200}
+                    animationEasing="ease-out"
+                    animationBegin={200}
+                    dot={false}
+                    activeDot={{ r: 5, strokeWidth: 0, fill: '#f59e0b' }}
+                    filter="url(#glowAmber)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -627,10 +662,24 @@ export function DashboardPage() {
               </div>
             }
           >
-            <div className="h-[400px]">
+            <div className="h-[440px] rounded-xl overflow-hidden bg-gradient-to-b from-[var(--muted)]/30 to-transparent p-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <BarChart data={attendanceChartData} margin={{ top: 16, right: 10, left: 0, bottom: 0 }} barCategoryGap="30%">
+                  <defs>
+                    <linearGradient id="barPresent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#16a34a" stopOpacity={0.7} />
+                    </linearGradient>
+                    <linearGradient id="barLate" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#d97706" stopOpacity={0.7} />
+                    </linearGradient>
+                    <linearGradient id="barAbsent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.7} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" strokeOpacity={0.5} />
                   <XAxis
                     dataKey="month"
                     tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
@@ -644,9 +693,9 @@ export function DashboardPage() {
                     width={40}
                   />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="present" name="Present" fill="#22c55e" radius={[4, 4, 0, 0]} stackId="att" />
-                  <Bar dataKey="late" name="Late" fill="#f59e0b" radius={[0, 0, 0, 0]} stackId="att" />
-                  <Bar dataKey="absent" name="Absent" fill="#ef4444" radius={[4, 4, 0, 0]} stackId="att" />
+                  <Bar dataKey="present" name="Present" fill="url(#barPresent)" radius={[0, 0, 0, 0]} stackId="att" isAnimationActive animationDuration={900} animationEasing="ease-out" />
+                  <Bar dataKey="late" name="Late" fill="url(#barLate)" radius={[0, 0, 0, 0]} stackId="att" isAnimationActive animationDuration={900} animationEasing="ease-out" animationBegin={80} />
+                  <Bar dataKey="absent" name="Absent" fill="url(#barAbsent)" radius={[6, 6, 0, 0]} stackId="att" isAnimationActive animationDuration={900} animationEasing="ease-out" animationBegin={160} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
