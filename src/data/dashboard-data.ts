@@ -437,29 +437,34 @@ export function getFilteredTimeSeriesData(
     }));
   }
 
-  // '5y' — 20 quarterly data points (Q1 2022 → Q4 2026)
-  const yearLabels = ['22', '23', '24', '25', '26'];
-  const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
+  // '5y' — 5 yearly data points (2022 → 2026)
+  const yearFull = [2022, 2023, 2024, 2025, 2026];
   const points: TimeSeriesPoint[] = [];
 
   for (let y = 0; y < 5; y++) {
     const yearsBack = 4 - y; // year 0 = 2022 (4 years back), year 4 = 2026 (current)
     const growthFactor = Math.pow(0.88, yearsBack); // ~12% YoY growth going back
 
-    for (let q = 0; q < 4; q++) {
-      // Sum 3 months for the quarter from the current year data, then scale
-      const m1 = q * 3;
-      const qMonths = [monthly[m1], monthly[m1 + 1], monthly[m1 + 2]];
+    // Sum all 12 months for the full year
+    const yearly = monthly.reduce(
+      (acc, m) => ({
+        pmsRevenue: acc.pmsRevenue + m.pmsRevenue,
+        agoRevenue: acc.agoRevenue + m.agoRevenue,
+        dpkRevenue: acc.dpkRevenue + m.dpkRevenue,
+        lubricantRevenue: acc.lubricantRevenue + m.lubricantRevenue,
+        totalRevenue: acc.totalRevenue + m.totalRevenue,
+      }),
+      { pmsRevenue: 0, agoRevenue: 0, dpkRevenue: 0, lubricantRevenue: 0, totalRevenue: 0 }
+    );
 
-      points.push({
-        label: `${quarterLabels[q]} '${yearLabels[y]}`,
-        pmsRevenue: Math.round(qMonths.reduce((s, m) => s + m.pmsRevenue, 0) * growthFactor),
-        agoRevenue: Math.round(qMonths.reduce((s, m) => s + m.agoRevenue, 0) * growthFactor),
-        dpkRevenue: Math.round(qMonths.reduce((s, m) => s + m.dpkRevenue, 0) * growthFactor),
-        lubricantRevenue: Math.round(qMonths.reduce((s, m) => s + m.lubricantRevenue, 0) * growthFactor),
-        totalRevenue: Math.round(qMonths.reduce((s, m) => s + m.totalRevenue, 0) * growthFactor),
-      });
-    }
+    points.push({
+      label: String(yearFull[y]),
+      pmsRevenue: Math.round(yearly.pmsRevenue * growthFactor),
+      agoRevenue: Math.round(yearly.agoRevenue * growthFactor),
+      dpkRevenue: Math.round(yearly.dpkRevenue * growthFactor),
+      lubricantRevenue: Math.round(yearly.lubricantRevenue * growthFactor),
+      totalRevenue: Math.round(yearly.totalRevenue * growthFactor),
+    });
   }
 
   return points;

@@ -517,7 +517,7 @@ export function DashboardPage() {
           >
             <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 70, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="pmsGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
@@ -527,6 +527,10 @@ export function DashboardPage() {
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
+                    <linearGradient id="lubGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                   <XAxis
@@ -534,17 +538,29 @@ export function DashboardPage() {
                     tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
-                    interval={chartData.length > 15 ? Math.ceil(chartData.length / 10) : 0}
+                    interval={revenueRange === 'today' ? 3 : revenueRange === '30d' ? 4 : 0}
                   />
                   <YAxis
+                    yAxisId="left"
+                    orientation="left"
                     tickFormatter={(v: number) => formatCompactNaira(v)}
                     tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={65}
                   />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tickFormatter={(v: number) => formatCompactNaira(v)}
+                    tick={{ fill: '#f59e0b', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={65}
+                  />
                   <Tooltip content={<ChartTooltip />} />
                   <Area
+                    yAxisId="left"
                     type="monotone"
                     dataKey="pmsRevenue"
                     name="PMS Revenue"
@@ -553,6 +569,7 @@ export function DashboardPage() {
                     strokeWidth={2.5}
                   />
                   <Area
+                    yAxisId="left"
                     type="monotone"
                     dataKey="agoRevenue"
                     name="AGO Revenue"
@@ -561,14 +578,14 @@ export function DashboardPage() {
                     strokeWidth={2}
                   />
                   <Area
+                    yAxisId="right"
                     type="monotone"
                     dataKey="lubricantRevenue"
                     name="Lubricant Revenue"
                     stroke="#f59e0b"
-                    fill="none"
+                    fill="url(#lubGrad)"
                     strokeWidth={2}
                     strokeDasharray="6 4"
-                    strokeOpacity={0.7}
                   />
                 </AreaChart>
               </ResponsiveContainer>
