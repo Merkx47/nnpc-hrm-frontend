@@ -1,0 +1,292 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* NNPC Brand Colors */
+  --nnpc-dark-green: #1A5632;
+  --nnpc-bright-green: #1D8A4E;
+  --nnpc-yellow: #EED100;
+  --nnpc-red: #E41E26;
+  --nnpc-gray: #6B6B6B;
+
+  /* Light Mode Theme */
+  --background: oklch(0.955 0.008 155);
+  --foreground: oklch(0.15 0.02 155);
+
+  --card: oklch(0.995 0.002 155);
+  --card-foreground: oklch(0.15 0.02 155);
+  --card-border: oklch(0.91 0.012 155);
+
+  --popover: oklch(0.99 0.002 155);
+  --popover-foreground: oklch(0.15 0.02 155);
+
+  --primary: oklch(0.40 0.12 155);
+  --primary-foreground: oklch(0.98 0.005 155);
+
+  --secondary: oklch(0.94 0.012 155);
+  --secondary-foreground: oklch(0.25 0.03 155);
+
+  --muted: oklch(0.935 0.010 155);
+  --muted-foreground: oklch(0.50 0.02 155);
+
+  --accent: oklch(0.88 0.15 95);
+  --accent-foreground: oklch(0.25 0.06 95);
+
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(0.98 0.005 25);
+
+  --border: oklch(0.92 0.008 155);
+  --input: oklch(0.92 0.008 155);
+  --ring: oklch(0.40 0.12 155);
+
+  --sidebar: oklch(0.97 0.008 155);
+  --sidebar-foreground: oklch(0.25 0.03 155);
+  --sidebar-border: oklch(0.92 0.01 155);
+  --sidebar-accent: oklch(0.93 0.015 155);
+  --sidebar-ring: oklch(0.40 0.12 155);
+
+  /* Chart colors */
+  --chart-1: oklch(0.40 0.12 155);
+  --chart-2: oklch(0.50 0.14 155);
+  --chart-3: oklch(0.80 0.18 95);
+  --chart-4: oklch(0.55 0.20 25);
+  --chart-5: oklch(0.55 0.10 250);
+
+  /* Status colors */
+  --status-success: oklch(0.55 0.16 155);
+  --status-warning: oklch(0.85 0.18 95);
+  --status-error: oklch(0.55 0.22 25);
+  --status-info: oklch(0.55 0.14 250);
+
+  --radius: 0.625rem;
+
+  /* Elevation system (like Drone/Huawei) */
+  --elevate-1: rgba(0, 0, 0, 0.03);
+  --elevate-2: rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --background: oklch(0.12 0.025 155);
+  --foreground: oklch(0.93 0.008 155);
+
+  --card: oklch(0.15 0.025 155);
+  --card-foreground: oklch(0.93 0.008 155);
+  --card-border: oklch(0.22 0.03 155);
+
+  --popover: oklch(0.14 0.025 155);
+  --popover-foreground: oklch(0.93 0.008 155);
+
+  --primary: oklch(0.55 0.14 155);
+  --primary-foreground: oklch(0.12 0.025 155);
+
+  --secondary: oklch(0.20 0.03 155);
+  --secondary-foreground: oklch(0.90 0.01 155);
+
+  --muted: oklch(0.20 0.025 155);
+  --muted-foreground: oklch(0.60 0.02 155);
+
+  --accent: oklch(0.78 0.16 95);
+  --accent-foreground: oklch(0.15 0.04 95);
+
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 25);
+
+  --border: oklch(0.22 0.025 155);
+  --input: oklch(0.22 0.025 155);
+  --ring: oklch(0.55 0.14 155);
+
+  --sidebar: oklch(0.10 0.025 155);
+  --sidebar-foreground: oklch(0.90 0.008 155);
+  --sidebar-border: oklch(0.20 0.03 155);
+  --sidebar-accent: oklch(0.18 0.03 155);
+  --sidebar-ring: oklch(0.55 0.14 155);
+
+  --chart-1: oklch(0.60 0.16 155);
+  --chart-2: oklch(0.50 0.14 155);
+  --chart-3: oklch(0.85 0.18 95);
+  --chart-4: oklch(0.60 0.22 25);
+  --chart-5: oklch(0.60 0.12 250);
+
+  --status-success: oklch(0.60 0.16 155);
+  --status-warning: oklch(0.85 0.18 95);
+  --status-error: oklch(0.60 0.22 25);
+  --status-info: oklch(0.60 0.14 250);
+
+  /* Elevation in dark mode */
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.09);
+}
+
+/* Base styles */
+@layer base {
+  * {
+    @apply border-[var(--border)];
+  }
+
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)];
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Elevation system — subtle brightness overlays on interactive elements */
+.hover-elevate {
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-elevate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.hover-elevate:hover::after {
+  background-color: var(--elevate-1);
+}
+
+.active-press:active::after {
+  background-color: var(--elevate-2);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+}
+
+/* ── Google Translate ─────────────────────────────────────────────── */
+/* Hide the intrusive top banner iframe that Google Translate injects */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Hide the top-level wrapper div Google Translate adds to body */
+body > .skiptranslate {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Google Translate sets body { top: 40px; position: relative; } — undo that */
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+/* Hide the default Google Translate widget — we use our own language selector */
+#google_translate_element {
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+/* Hide Google Translate tooltip */
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+/* ── Station Map Popup ───────────────────────────────────────────── */
+/* Ensure popup appears above map overlay elements */
+.mapboxgl-popup {
+  z-index: 20 !important;
+}
+
+.station-popup .mapboxgl-popup-content {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08) !important;
+  border: 1px solid rgba(0,0,0,0.06);
+  min-width: 260px;
+}
+
+.station-popup .mapboxgl-popup-tip {
+  border-top-color: white !important;
+}
+
+.station-popup .mapboxgl-popup-close-button {
+  color: white;
+  font-size: 20px;
+  padding: 2px 8px;
+  right: 2px;
+  top: 2px;
+  z-index: 5;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+
+.station-popup .mapboxgl-popup-close-button:hover {
+  background: transparent;
+  opacity: 1;
+}
+
+/* Glass morphism utility */
+.glass {
+  background: color-mix(in oklch, var(--card) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-heavy {
+  background: color-mix(in oklch, var(--card) 50%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Pulsing animation for map markers */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.pulse-marker::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* Page transition */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
