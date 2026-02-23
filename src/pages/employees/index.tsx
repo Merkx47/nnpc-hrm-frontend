@@ -23,7 +23,8 @@ import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { ROLE_LABELS, ROLE_COLORS, EMPLOYMENT_STATUS_COLORS } from '@/lib/constants';
 import { getInitials } from '@/lib/formatters';
-import { employees } from '@/data/employees';
+import { employees as staticEmployees } from '@/data/employees';
+import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
 import { getFilteredStationIds } from '@/data/dashboard-data';
 import { usePermission } from '@/lib/rbac';
@@ -46,6 +47,12 @@ export function EmployeesPage() {
 
   // Global scope filters from store
   const { currentUser, selectedRegionId, selectedBranchId, selectedStationId } = useAppStore();
+  const addedEmployees = useDataStore((s) => s.addedEmployees);
+  const deletedEmployeeIds = useDataStore((s) => s.deletedEmployeeIds);
+  const employees = useMemo(() => {
+    const deletedSet = new Set(deletedEmployeeIds);
+    return [...staticEmployees, ...addedEmployees].filter((e) => !deletedSet.has(e.id));
+  }, [addedEmployees, deletedEmployeeIds]);
 
   // Local page-specific filters
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -73,7 +80,7 @@ export function EmployeesPage() {
     const hasGlobal = selectedRegionId || selectedBranchId || selectedStationId;
     if (!hasGlobal) return employees;
     return employees.filter((e) => globalStationIds.has(e.stationId));
-  }, [currentUser, selectedRegionId, selectedBranchId, selectedStationId, globalStationIds]);
+  }, [employees, currentUser, selectedRegionId, selectedBranchId, selectedStationId, globalStationIds]);
 
   const stats = useMemo(() => {
     const total = scopedEmployees.length;

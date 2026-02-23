@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TRAINING_STATUS_COLORS, TRAINING_CATEGORIES } from '@/lib/constants';
-import { trainingModules, trainingAssignments } from '@/data/training-modules';
+import { trainingModules, trainingAssignments as staticTrainingAssignments } from '@/data/training-modules';
+import { useDataStore } from '@/lib/data-store';
 import type { TrainingStatus } from '@/types';
 
 const TRAINING_STATUS_LABELS: Record<TrainingStatus, string> = {
@@ -28,6 +29,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function TrainingModulesPage() {
+  const addedTrainingAssignments = useDataStore((s) => s.addedTrainingAssignments);
+  const trainingAssignments = useMemo(() => [...staticTrainingAssignments, ...addedTrainingAssignments], [addedTrainingAssignments]);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Get unique categories from the actual module data

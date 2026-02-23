@@ -13,7 +13,8 @@ import { getFilteredStationIds } from '@/data/dashboard-data';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { SHIFT_LABELS, SHIFT_COLORS } from '@/lib/constants';
-import { shifts } from '@/data/shifts';
+import { shifts as staticShifts } from '@/data/shifts';
+import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
 import { employees } from '@/data/employees';
 import type { ShiftType } from '@/types';
@@ -89,6 +90,12 @@ export function ShiftsPage() {
   const canManageShifts = usePermission('manage_shifts');
   const submitApproval = useSubmitApproval();
   const isAttendant = currentUser?.role === 'attendant';
+  const addedShifts = useDataStore((s) => s.addedShifts);
+  const deletedShiftIds = useDataStore((s) => s.deletedShiftIds);
+  const shifts = useMemo(() => {
+    const deletedSet = new Set(deletedShiftIds);
+    return [...staticShifts, ...addedShifts].filter((s) => !deletedSet.has(s.id));
+  }, [addedShifts, deletedShiftIds]);
 
   // Global filter: compute allowed station IDs
   const globalStationIds = useMemo(
@@ -187,8 +194,8 @@ export function ShiftsPage() {
     submitApproval({
       actionType: 'create_shift',
       actionLabel: 'Assign Shift',
-      stationId: assignStation,
       payload: {
+        stationId: assignStation,
         employeeId: assignEmployee,
         employeeName: emp ? `${emp.firstName} ${emp.lastName}` : assignEmployee,
         date: assignDate,

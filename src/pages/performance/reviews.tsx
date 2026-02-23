@@ -11,7 +11,8 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
-import { performanceReviews } from '@/data/performance-reviews';
+import { performanceReviews as staticReviews } from '@/data/performance-reviews';
+import { useDataStore } from '@/lib/data-store';
 import { formatDate } from '@/lib/formatters';
 
 function getRatingBadgeColor(rating: number): string {
@@ -32,6 +33,12 @@ export function PerformanceReviewsPage() {
   const canViewKpi = usePermission('view_kpi');
   const canManageEvaluations = usePermission('manage_evaluations');
   const submitApproval = useSubmitApproval();
+  const addedReviews = useDataStore((s) => s.addedReviews);
+  const deletedReviewIds = useDataStore((s) => s.deletedReviewIds);
+  const performanceReviews = useMemo(() => {
+    const deletedSet = new Set(deletedReviewIds);
+    return [...staticReviews, ...addedReviews].filter((r) => !deletedSet.has(r.id));
+  }, [addedReviews, deletedReviewIds]);
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

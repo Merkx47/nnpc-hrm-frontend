@@ -13,7 +13,8 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { formatDate, formatNaira } from '@/lib/formatters';
 import { SHIFT_LABELS, SHIFT_COLORS } from '@/lib/constants';
-import { shifts } from '@/data/shifts';
+import { shifts as staticShifts } from '@/data/shifts';
+import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
 
 const PAGE_SIZE = 10;
@@ -24,6 +25,12 @@ const inputClass =
 export function ActivityLogPage() {
   const { currentUser } = useAppStore();
   const isAttendant = currentUser?.role === 'attendant';
+  const addedShifts = useDataStore((s) => s.addedShifts);
+  const deletedShiftIds = useDataStore((s) => s.deletedShiftIds);
+  const shifts = useMemo(() => {
+    const deletedSet = new Set(deletedShiftIds);
+    return [...staticShifts, ...addedShifts].filter((s) => !deletedSet.has(s.id));
+  }, [addedShifts, deletedShiftIds]);
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

@@ -13,7 +13,8 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
-import { salesTargets } from '@/data/sales-targets';
+import { salesTargets as staticSalesTargets } from '@/data/sales-targets';
+import { useDataStore } from '@/lib/data-store';
 import { formatNaira } from '@/lib/formatters';
 
 type Period = 'all' | 'daily' | 'weekly' | 'monthly';
@@ -43,6 +44,12 @@ export function SalesTargetsPage() {
   const canViewKpi = usePermission('view_kpi');
   const canManageEvaluations = usePermission('manage_evaluations');
   const submitApproval = useSubmitApproval();
+  const addedSalesTargets = useDataStore((s) => s.addedSalesTargets);
+  const deletedSalesTargetIds = useDataStore((s) => s.deletedSalesTargetIds);
+  const salesTargets = useMemo(() => {
+    const deletedSet = new Set(deletedSalesTargetIds);
+    return [...staticSalesTargets, ...addedSalesTargets].filter((st) => !deletedSet.has(st.id));
+  }, [addedSalesTargets, deletedSalesTargetIds]);
   const { selectedRegionId, selectedBranchId, selectedStationId } = useAppStore();
 
   // Global filter: compute allowed station IDs

@@ -29,19 +29,11 @@ export function useSubmitApproval() {
       payload: params.payload,
     });
 
-    if (result.status === 'approved') {
-      toast.success(`${params.actionLabel} auto-approved`, {
-        description: params.entityName
-          ? `${params.actionLabel} for ${params.entityName} has been processed.`
-          : `Your ${params.actionLabel.toLowerCase()} has been processed.`,
-      });
-    } else {
-      toast.success('Submitted for approval', {
-        description: params.entityName
-          ? `${params.actionLabel} for ${params.entityName} is pending review.`
-          : `Your ${params.actionLabel.toLowerCase()} is pending review.`,
-      });
-    }
+    toast.success('Submitted for approval', {
+      description: params.entityName
+        ? `${params.actionLabel} for ${params.entityName} is pending review.`
+        : `Your ${params.actionLabel.toLowerCase()} is pending review.`,
+    });
 
     return result;
   };

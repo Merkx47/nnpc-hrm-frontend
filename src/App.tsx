@@ -33,6 +33,7 @@ import { DocumentLibraryPage } from '@/pages/documents';
 import { ApprovalsQueuePage } from '@/pages/approvals/pending';
 import { MyRequestsPage } from '@/pages/approvals/my-requests';
 import { ApprovalDetailPage } from '@/pages/approvals/detail';
+import { AllRequestsPage } from '@/pages/approvals/all-requests';
 import { useApprovalStore } from '@/lib/approval-store';
 import { Toaster } from 'sonner';
 
@@ -123,6 +124,7 @@ function ProtectedRoutes() {
         <Route path="/approvals">{() => <Redirect to="/approvals/pending" />}</Route>
         <Route path="/approvals/pending" component={ApprovalsQueuePage} />
         <Route path="/approvals/my-requests" component={MyRequestsPage} />
+        <Route path="/approvals/all" component={AllRequestsPage} />
         <Route path="/approvals/:id" component={ApprovalDetailPage} />
 
         {/* Compensation */}

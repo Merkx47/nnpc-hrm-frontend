@@ -148,14 +148,22 @@ export const APPROVAL_STATUS_COLORS: Record<ApprovalStatus, string> = {
 export const APPROVAL_ACTION_LABELS: Record<ApprovalActionType, string> = {
   create_employee: 'New Employee',
   edit_employee: 'Edit Employee',
+  delete_employee: 'Terminate Employee',
   transfer_employee: 'Quick Transfer',
   create_shift: 'Shift Assignment',
+  delete_shift: 'Remove Shift',
   create_leave_request: 'Leave Request',
+  delete_leave_request: 'Cancel Leave',
   create_transfer: 'Employee Transfer',
+  delete_transfer: 'Cancel Transfer',
   create_training_assignment: 'Training Assignment',
+  delete_training_assignment: 'Remove Training',
   create_incident: 'Incident Report',
+  delete_incident: 'Remove Incident',
   create_review: 'Performance Review',
+  delete_review: 'Remove Review',
   create_sales_target: 'Sales Target',
+  delete_sales_target: 'Remove Sales Target',
 };
 
 // Navigation items with role-based visibility
@@ -240,6 +248,7 @@ export const SIDEBAR_NAV: NavItem[] = [
     children: [
       { label: 'Pending Review', href: '/approvals/pending', icon: 'ClipboardCheck', roles: ['admin', 'regional_manager', 'branch_manager', 'dealer', 'supervisor'] },
       { label: 'My Requests', href: '/approvals/my-requests', icon: 'ClipboardList', roles: ['admin', 'regional_manager', 'branch_manager', 'dealer', 'supervisor', 'attendant'] },
+      { label: 'All Requests', href: '/approvals/all', icon: 'ShieldCheck', roles: ['admin'] },
     ],
   },
   {

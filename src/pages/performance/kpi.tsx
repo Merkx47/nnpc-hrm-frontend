@@ -10,9 +10,10 @@ import { getFilteredStationIds } from '@/data/dashboard-data';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { salesTargets } from '@/data/sales-targets';
-import { performanceReviews } from '@/data/performance-reviews';
-import { trainingAssignments } from '@/data/training-modules';
+import { salesTargets as staticSalesTargets } from '@/data/sales-targets';
+import { performanceReviews as staticReviews } from '@/data/performance-reviews';
+import { trainingAssignments as staticTrainingAssignments } from '@/data/training-modules';
+import { useDataStore } from '@/lib/data-store';
 
 type TimePeriod = 'daily' | 'weekly' | 'monthly';
 
@@ -37,6 +38,24 @@ function getRatingBadgeColor(rating: number): string {
 export function KpiDashboardPage() {
   const canViewKpi = usePermission('view_kpi');
   const { selectedRegionId, selectedBranchId, selectedStationId } = useAppStore();
+  const addedSalesTargets = useDataStore((s) => s.addedSalesTargets);
+  const addedReviews = useDataStore((s) => s.addedReviews);
+  const addedTrainingAssignments = useDataStore((s) => s.addedTrainingAssignments);
+  const deletedSalesTargetIds = useDataStore((s) => s.deletedSalesTargetIds);
+  const deletedReviewIds = useDataStore((s) => s.deletedReviewIds);
+  const deletedTrainingAssignmentIds = useDataStore((s) => s.deletedTrainingAssignmentIds);
+  const salesTargets = useMemo(() => {
+    const d = new Set(deletedSalesTargetIds);
+    return [...staticSalesTargets, ...addedSalesTargets].filter((st) => !d.has(st.id));
+  }, [addedSalesTargets, deletedSalesTargetIds]);
+  const performanceReviews = useMemo(() => {
+    const d = new Set(deletedReviewIds);
+    return [...staticReviews, ...addedReviews].filter((r) => !d.has(r.id));
+  }, [addedReviews, deletedReviewIds]);
+  const trainingAssignments = useMemo(() => {
+    const d = new Set(deletedTrainingAssignmentIds);
+    return [...staticTrainingAssignments, ...addedTrainingAssignments].filter((ta) => !d.has(ta.id));
+  }, [addedTrainingAssignments, deletedTrainingAssignmentIds]);
 
   // Global filter: compute allowed station IDs
   const globalStationIds = useMemo(

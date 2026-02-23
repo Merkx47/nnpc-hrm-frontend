@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { AlertTriangle, Plus, Shield, CheckCircle, Search, Filter, X } from 'lucide-react';
+import { AlertTriangle, Plus, Shield, CheckCircle, Search, Filter, X, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
 import { useSubmitApproval } from '@/lib/use-submit-approval';
@@ -12,7 +12,8 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { formatDate } from '@/lib/formatters';
 import { INCIDENT_LABELS, SEVERITY_COLORS } from '@/lib/constants';
-import { incidents } from '@/data/incidents';
+import { incidents as staticIncidents } from '@/data/incidents';
+import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
 import type { IncidentType, Severity, IncidentStatus } from '@/types';
 
@@ -43,6 +44,12 @@ const inputClass =
 export function IncidentsPage() {
   const { selectedRegionId, selectedBranchId, selectedStationId } = useAppStore();
   const submitApproval = useSubmitApproval();
+  const addedIncidents = useDataStore((s) => s.addedIncidents);
+  const deletedIncidentIds = useDataStore((s) => s.deletedIncidentIds);
+  const incidents = useMemo(() => {
+    const deletedSet = new Set(deletedIncidentIds);
+    return [...staticIncidents, ...addedIncidents].filter((i) => !deletedSet.has(i.id));
+  }, [addedIncidents, deletedIncidentIds]);
 
   // Global filter: compute allowed station IDs
   const globalStationIds = useMemo(
@@ -128,8 +135,8 @@ export function IncidentsPage() {
     submitApproval({
       actionType: 'create_incident',
       actionLabel: 'Report Incident',
-      stationId: formStation,
       payload: {
+        stationId: formStation,
         type: formType,
         severity: formSeverity,
         description: formDescription,
@@ -398,13 +405,16 @@ export function IncidentsPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)] uppercase">
                 Description
               </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-[var(--muted-foreground)] uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {paginatedIncidents.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-8 text-center text-sm text-[var(--muted-foreground)]"
                 >
                   No incidents found matching the selected filters.
@@ -454,6 +464,26 @@ export function IncidentsPage() {
                   </td>
                   <td className="px-4 py-3 text-sm text-[var(--muted-foreground)] max-w-[250px] truncate">
                     {incident.description}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => {
+                        submitApproval({
+                          actionType: 'delete_incident',
+                          actionLabel: 'Remove Incident',
+                          payload: {
+                            targetId: incident.id,
+                            targetName: `${INCIDENT_LABELS[incident.type]} at ${incident.stationName}`,
+                            reason: `Remove incident report ${incident.id}`,
+                          },
+                          entityName: incident.id,
+                        });
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      title="Remove incident"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </td>
                 </tr>
               ))

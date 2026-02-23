@@ -101,6 +101,20 @@ export function PayloadPreview({ actionType, payload }: PayloadPreviewProps) {
         { label: 'End', value: p.endDate as string },
       ]);
 
+    case 'delete_employee':
+    case 'delete_shift':
+    case 'delete_transfer':
+    case 'delete_leave_request':
+    case 'delete_incident':
+    case 'delete_training_assignment':
+    case 'delete_review':
+    case 'delete_sales_target':
+      return grid([
+        { label: 'Record ID', value: p.targetId as string },
+        { label: 'Record Name', value: p.targetName as string },
+        { label: 'Reason', value: p.reason as string },
+      ]);
+
     default: {
       // Generic fallback
       const entries = Object.entries(p).slice(0, 8);

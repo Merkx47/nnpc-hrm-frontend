@@ -13,7 +13,8 @@ import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { formatDate } from '@/lib/formatters';
-import { attendanceRecords, leaveRequests } from '@/data/attendance';
+import { attendanceRecords, leaveRequests as staticLeaveRequests } from '@/data/attendance';
+import { useDataStore } from '@/lib/data-store';
 import { employees } from '@/data/employees';
 
 type Tab = 'attendance' | 'leave';
@@ -51,6 +52,12 @@ export function AttendancePage() {
   const { selectedRegionId, selectedBranchId, selectedStationId, currentUser } = useAppStore();
   const isAttendant = currentUser?.role === 'attendant';
   const submitApproval = useSubmitApproval();
+  const addedLeaveRequests = useDataStore((s) => s.addedLeaveRequests);
+  const deletedLeaveRequestIds = useDataStore((s) => s.deletedLeaveRequestIds);
+  const leaveRequests = useMemo(() => {
+    const deletedSet = new Set(deletedLeaveRequestIds);
+    return [...staticLeaveRequests, ...addedLeaveRequests].filter((lr) => !deletedSet.has(lr.id));
+  }, [addedLeaveRequests, deletedLeaveRequestIds]);
   const [activeTab, setActiveTab] = useState<Tab>('attendance');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [attendancePage, setAttendancePage] = useState(1);

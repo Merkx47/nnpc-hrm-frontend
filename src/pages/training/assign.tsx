@@ -14,7 +14,8 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { TRAINING_STATUS_COLORS } from '@/lib/constants';
 import { formatDate } from '@/lib/formatters';
-import { trainingModules, trainingAssignments } from '@/data/training-modules';
+import { trainingModules, trainingAssignments as staticTrainingAssignments } from '@/data/training-modules';
+import { useDataStore } from '@/lib/data-store';
 import { employees } from '@/data/employees';
 import type { TrainingStatus } from '@/types';
 
@@ -32,6 +33,12 @@ export function AssignTrainingPage() {
   const submitApproval = useSubmitApproval();
   const { currentUser } = useAppStore();
   const isAttendant = currentUser?.role === 'attendant';
+  const addedTrainingAssignments = useDataStore((s) => s.addedTrainingAssignments);
+  const deletedTrainingAssignmentIds = useDataStore((s) => s.deletedTrainingAssignmentIds);
+  const trainingAssignments = useMemo(() => {
+    const deletedSet = new Set(deletedTrainingAssignmentIds);
+    return [...staticTrainingAssignments, ...addedTrainingAssignments].filter((ta) => !deletedSet.has(ta.id));
+  }, [addedTrainingAssignments, deletedTrainingAssignmentIds]);
 
   // Assignment form state
   const [selectedModule, setSelectedModule] = useState<string>('');

@@ -13,13 +13,14 @@ import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { ROLE_LABELS, ROLE_COLORS, EMPLOYMENT_STATUS_COLORS, TRAINING_STATUS_COLORS, SEVERITY_COLORS, INCIDENT_LABELS } from '@/lib/constants';
 import { formatDate, formatNaira, formatPhone, getInitials } from '@/lib/formatters';
-import { employees } from '@/data/employees';
+import { employees as staticEmployees } from '@/data/employees';
+import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
-import { trainingAssignments, trainingModules } from '@/data/training-modules';
-import { performanceReviews } from '@/data/performance-reviews';
-import { attendanceRecords, leaveRequests } from '@/data/attendance';
+import { trainingAssignments as staticTrainingAssignments, trainingModules } from '@/data/training-modules';
+import { performanceReviews as staticReviews } from '@/data/performance-reviews';
+import { attendanceRecords, leaveRequests as staticLeaveRequests } from '@/data/attendance';
 import { salaryRecords } from '@/data/salary-records';
-import { incidents } from '@/data/incidents';
+import { incidents as staticIncidents } from '@/data/incidents';
 import type { Employee, EmploymentStatus } from '@/types';
 
 const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
@@ -59,8 +60,16 @@ export function EmployeeDetailPage() {
   const [activeTab, setActiveTab] = useState<TabId>('personal');
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferStation, setTransferStation] = useState('');
+  const [showTerminateModal, setShowTerminateModal] = useState(false);
+  const [terminateReason, setTerminateReason] = useState('');
 
-  const employee = useMemo(() => employees.find((e) => e.id === params?.id), [params?.id]);
+  const addedEmployees = useDataStore((s) => s.addedEmployees);
+  const deletedEmployeeIds = useDataStore((s) => s.deletedEmployeeIds);
+  const employees = useMemo(() => {
+    const deletedSet = new Set(deletedEmployeeIds);
+    return [...staticEmployees, ...addedEmployees].filter((e) => !deletedSet.has(e.id));
+  }, [addedEmployees, deletedEmployeeIds]);
+  const employee = useMemo(() => employees.find((e) => e.id === params?.id), [employees, params?.id]);
   const station = useMemo(() => stations.find((s) => s.id === employee?.stationId), [employee?.stationId]);
 
   if (!employee) {
@@ -144,6 +153,15 @@ export function EmployeeDetailPage() {
               <ArrowLeftRight className="h-4 w-4" />
               Transfer
             </button>
+            {employee.employmentStatus === 'active' && (
+              <button
+                onClick={() => setShowTerminateModal(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-800 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              >
+                <XCircle className="h-4 w-4" />
+                Terminate
+              </button>
+            )}
           </div>
         </div>
       </motion.div>
@@ -266,7 +284,6 @@ export function EmployeeDetailPage() {
                     submitApproval({
                       actionType: 'transfer_employee',
                       actionLabel: 'Transfer Employee',
-                      stationId: employee.stationId,
                       payload: {
                         employeeId: employee.id,
                         employeeName: `${employee.firstName} ${employee.lastName}`,
@@ -284,6 +301,98 @@ export function EmployeeDetailPage() {
                   className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Confirm Transfer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Terminate Modal */}
+      <AnimatePresence>
+        {showTerminateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setShowTerminateModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-xl border border-[var(--card-border)] bg-[var(--card)] shadow-xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Terminate Employee</h3>
+                <button
+                  onClick={() => setShowTerminateModal(false)}
+                  className="rounded-lg p-1.5 hover:bg-[var(--secondary)] transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="px-6 py-4 space-y-4">
+                <div className="rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-3">
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    You are about to submit a termination request for <strong>{employee.firstName} {employee.lastName}</strong>.
+                    This will go through the approval queue for review.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-[var(--muted-foreground)]">Employee</p>
+                  <p className="text-sm font-medium text-[var(--foreground)]">
+                    {employee.firstName} {employee.lastName} ({employee.id})
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1">
+                    Reason for Termination <span className="text-[var(--destructive)]">*</span>
+                  </label>
+                  <textarea
+                    value={terminateReason}
+                    onChange={(e) => setTerminateReason(e.target.value)}
+                    placeholder="Explain the reason for termination..."
+                    rows={3}
+                    className="w-full rounded-lg border border-[var(--input)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--border)] bg-[var(--secondary)]/30">
+                <button
+                  onClick={() => { setShowTerminateModal(false); setTerminateReason(''); }}
+                  className="rounded-lg border border-[var(--input)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!terminateReason.trim()) {
+                      toast.error('Please provide a reason');
+                      return;
+                    }
+                    submitApproval({
+                      actionType: 'delete_employee',
+                      actionLabel: 'Terminate Employee',
+                      payload: {
+                        targetId: employee.id,
+                        targetName: `${employee.firstName} ${employee.lastName}`,
+                        reason: terminateReason.trim(),
+                        role: employee.role,
+                        stationId: employee.stationId,
+                        stationName: station?.name ?? '',
+                      },
+                      entityName: `${employee.firstName} ${employee.lastName}`,
+                    });
+                    setShowTerminateModal(false);
+                    setTerminateReason('');
+                  }}
+                  disabled={!terminateReason.trim()}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Termination
                 </button>
               </div>
             </motion.div>
@@ -444,7 +553,13 @@ function HistoryTab({ employee }: { employee: Employee }) {
 
 /* ───────────── Training Tab ───────────── */
 function TrainingTab({ employeeId }: { employeeId: string }) {
-  const assignments = trainingAssignments.filter((a) => a.employeeId === employeeId);
+  const addedTA = useDataStore((s) => s.addedTrainingAssignments);
+  const deletedTAIds = useDataStore((s) => s.deletedTrainingAssignmentIds);
+  const allTrainingAssignments = useMemo(() => {
+    const d = new Set(deletedTAIds);
+    return [...staticTrainingAssignments, ...addedTA].filter((ta) => !d.has(ta.id));
+  }, [addedTA, deletedTAIds]);
+  const assignments = allTrainingAssignments.filter((a) => a.employeeId === employeeId);
   const completed = assignments.filter((a) => a.status === 'completed').length;
   const total = assignments.length;
 
@@ -515,7 +630,13 @@ function TrainingTab({ employeeId }: { employeeId: string }) {
 
 /* ───────────── Performance Tab ───────────── */
 function PerformanceTab({ employeeId }: { employeeId: string }) {
-  const reviews = performanceReviews.filter((r) => r.employeeId === employeeId);
+  const addedRev = useDataStore((s) => s.addedReviews);
+  const deletedRevIds = useDataStore((s) => s.deletedReviewIds);
+  const allReviews = useMemo(() => {
+    const d = new Set(deletedRevIds);
+    return [...staticReviews, ...addedRev].filter((r) => !d.has(r.id));
+  }, [addedRev, deletedRevIds]);
+  const reviews = allReviews.filter((r) => r.employeeId === employeeId);
   const latest = reviews[0];
 
   const ratingColor = (rating: number) => {
@@ -620,8 +741,14 @@ function PerformanceTab({ employeeId }: { employeeId: string }) {
 
 /* ───────────── Attendance Tab ───────────── */
 function AttendanceTab({ employeeId }: { employeeId: string }) {
+  const addedLR = useDataStore((s) => s.addedLeaveRequests);
+  const deletedLRIds = useDataStore((s) => s.deletedLeaveRequestIds);
+  const allLeaveRequests = useMemo(() => {
+    const d = new Set(deletedLRIds);
+    return [...staticLeaveRequests, ...addedLR].filter((lr) => !d.has(lr.id));
+  }, [addedLR, deletedLRIds]);
   const records = attendanceRecords.filter((a) => a.employeeId === employeeId);
-  const leaves = leaveRequests.filter((l) => l.employeeId === employeeId);
+  const leaves = allLeaveRequests.filter((l) => l.employeeId === employeeId);
 
   const present = records.filter((r) => r.status === 'present').length;
   const late = records.filter((r) => r.status === 'late').length;
@@ -854,7 +981,13 @@ function DocumentsTab() {
 
 /* ───────────── Incidents Tab ───────────── */
 function IncidentsTab({ employeeId }: { employeeId: string }) {
-  const records = incidents.filter((i) => i.reportedBy === employeeId);
+  const addedInc = useDataStore((s) => s.addedIncidents);
+  const deletedIncIds = useDataStore((s) => s.deletedIncidentIds);
+  const allIncidents = useMemo(() => {
+    const d = new Set(deletedIncIds);
+    return [...staticIncidents, ...addedInc].filter((i) => !d.has(i.id));
+  }, [addedInc, deletedIncIds]);
+  const records = allIncidents.filter((i) => i.reportedBy === employeeId);
 
   const INCIDENT_STATUS_COLORS: Record<string, string> = {
     reported: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',

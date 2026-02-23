@@ -2,10 +2,11 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  ArrowLeftRight, Send, Calendar, Filter, X, Lock,
+  ArrowLeftRight, Send, Calendar, Filter, X, Lock, Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSubmitApproval } from '@/lib/use-submit-approval';
+import { useDataStore } from '@/lib/data-store';
 import { usePermission } from '@/lib/rbac';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -111,10 +112,17 @@ export function TransfersPage() {
   const selectedEmp = employees.find((e) => e.id === selectedEmployee);
   const fromStation = selectedEmp ? stations.find((s) => s.id === selectedEmp.stationId) : undefined;
 
+  const addedTransfers = useDataStore((s) => s.addedTransfers);
+  const deletedTransferIds = useDataStore((s) => s.deletedTransferIds);
+  const allTransfers = useMemo(() => {
+    const deletedSet = new Set(deletedTransferIds);
+    return [...mockTransfers, ...addedTransfers].filter((t) => !deletedSet.has(t.id));
+  }, [addedTransfers, deletedTransferIds]);
+
   const filteredTransfers = useMemo(() => {
-    if (statusFilter === 'all') return mockTransfers;
-    return mockTransfers.filter((t) => t.status === statusFilter);
-  }, [statusFilter]);
+    if (statusFilter === 'all') return allTransfers;
+    return allTransfers.filter((t) => t.status === statusFilter);
+  }, [allTransfers, statusFilter]);
 
   const paginatedTransfers = filteredTransfers.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -149,7 +157,6 @@ export function TransfersPage() {
     submitApproval({
       actionType: 'create_transfer',
       actionLabel: 'Employee Transfer',
-      stationId: selectedEmp?.stationId,
       payload: {
         employeeId: selectedEmployee,
         employeeName: `${selectedEmp?.firstName} ${selectedEmp?.lastName}`,
@@ -310,12 +317,13 @@ export function TransfersPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)] uppercase">Effective</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)] uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)] uppercase">Reason</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-[var(--muted-foreground)] uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedTransfers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--muted-foreground)]">
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--muted-foreground)]">
                       No transfers found
                     </td>
                   </tr>
@@ -335,6 +343,28 @@ export function TransfersPage() {
                         <StatusBadge label={t.status} colorClass={TRANSFER_STATUS_COLORS[t.status]} className="capitalize" />
                       </td>
                       <td className="px-4 py-3 text-sm text-[var(--muted-foreground)] max-w-[200px] truncate">{t.reason}</td>
+                      <td className="px-4 py-3 text-right">
+                        {(t.status === 'requested' || t.status === 'approved') && (
+                          <button
+                            onClick={() => {
+                              submitApproval({
+                                actionType: 'delete_transfer',
+                                actionLabel: 'Cancel Transfer',
+                                payload: {
+                                  targetId: t.id,
+                                  targetName: `${t.employeeName} transfer to ${t.toStationName}`,
+                                  reason: `Cancel transfer ${t.id}`,
+                                },
+                                entityName: t.employeeName,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                            title="Cancel transfer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

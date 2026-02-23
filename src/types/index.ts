@@ -308,14 +308,22 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'returned';
 export type ApprovalActionType =
   | 'create_employee'
   | 'edit_employee'
+  | 'delete_employee'
   | 'transfer_employee'
   | 'create_shift'
+  | 'delete_shift'
   | 'create_leave_request'
+  | 'delete_leave_request'
   | 'create_transfer'
+  | 'delete_transfer'
   | 'create_training_assignment'
+  | 'delete_training_assignment'
   | 'create_incident'
+  | 'delete_incident'
   | 'create_review'
-  | 'create_sales_target';
+  | 'delete_review'
+  | 'create_sales_target'
+  | 'delete_sales_target';
 
 export interface ApprovalNote {
   id: string;

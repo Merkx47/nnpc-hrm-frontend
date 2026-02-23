@@ -1,15 +1,15 @@
 import type { Role } from '@/types';
 
-const APPROVAL_CHAIN: Record<Role, Role | 'self'> = {
+const APPROVAL_CHAIN: Record<Role, Role> = {
   attendant: 'supervisor',
   supervisor: 'dealer',
   dealer: 'branch_manager',
   branch_manager: 'regional_manager',
   regional_manager: 'admin',
-  admin: 'self',
+  admin: 'admin',
 };
 
-export function getApproverRole(submitterRole: Role): Role | 'self' {
+export function getApproverRole(submitterRole: Role): Role {
   return APPROVAL_CHAIN[submitterRole];
 }
 

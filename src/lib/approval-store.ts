@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { ApprovalRequest, ApprovalStatus, ApprovalActionType, Role } from '@/types';
 import { getApproverRole } from '@/lib/approval';
 import { mockApprovalRequests } from '@/data/approval-requests';
+import { useDataStore } from '@/lib/data-store';
 
 interface ApprovalState {
   requests: ApprovalRequest[];
@@ -42,8 +43,7 @@ export const useApprovalStore = create<ApprovalState>()(
       },
 
       submitRequest: (params) => {
-        const approverRole = getApproverRole(params.submittedByRole);
-        const isAuto = approverRole === 'self';
+        const reviewerRole = getApproverRole(params.submittedByRole);
         const ts = now();
 
         const req: ApprovalRequest = {
@@ -54,16 +54,16 @@ export const useApprovalStore = create<ApprovalState>()(
           submittedByName: params.submittedByName,
           submittedByRole: params.submittedByRole,
           submittedAt: ts,
-          reviewerRole: isAuto ? params.submittedByRole : (approverRole as Role),
+          reviewerRole,
           stationId: params.stationId,
           payload: params.payload,
-          status: isAuto ? 'approved' : 'pending',
+          status: 'pending',
           notes: [{
             id: noteId(),
             authorId: params.submittedById,
             authorName: params.submittedByName,
             authorRole: params.submittedByRole,
-            note: isAuto ? 'Auto-approved (admin submission)' : 'Request submitted for review',
+            note: 'Request submitted for review',
             action: 'submitted',
             createdAt: ts,
           }],
@@ -71,6 +71,7 @@ export const useApprovalStore = create<ApprovalState>()(
         };
 
         set((s) => ({ requests: [req, ...s.requests] }));
+
         return req;
       },
 
@@ -86,6 +87,12 @@ export const useApprovalStore = create<ApprovalState>()(
             } : r
           ),
         }));
+
+        // Apply data mutations when request is approved
+        const approved = get().requests.find((r) => r.id === id);
+        if (approved) {
+          useDataStore.getState().applyApprovedRequest(approved);
+        }
       },
 
       rejectRequest: (id, reviewerId, reviewerName, reviewerRole, note) => {
@@ -117,14 +124,14 @@ export const useApprovalStore = create<ApprovalState>()(
       },
 
       resubmitRequest: (id, submitterId, submitterName, submitterRole, note, updatedPayload) => {
-        const approverRole = getApproverRole(submitterRole);
+        const reviewerRole = getApproverRole(submitterRole);
         const ts = now();
         set((s) => ({
           requests: s.requests.map((r) =>
             r.id === id ? {
               ...r,
               status: 'pending' as ApprovalStatus,
-              reviewerRole: approverRole === 'self' ? submitterRole : (approverRole as Role),
+              reviewerRole,
               payload: updatedPayload ?? r.payload,
               updatedAt: ts,
               notes: [...r.notes, { id: noteId(), authorId: submitterId, authorName: submitterName, authorRole: submitterRole, note, action: 'resubmitted' as const, createdAt: ts }],

@@ -9,7 +9,8 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
-import { performanceReviews } from '@/data/performance-reviews';
+import { performanceReviews as staticReviews } from '@/data/performance-reviews';
+import { useDataStore } from '@/lib/data-store';
 
 function getRatingBadgeColor(rating: number): string {
   if (rating >= 4) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
@@ -27,6 +28,12 @@ const PAGE_SIZE = 10;
 
 export function EvaluationsPage() {
   const canViewKpi = usePermission('view_kpi');
+  const addedReviews = useDataStore((s) => s.addedReviews);
+  const deletedReviewIds = useDataStore((s) => s.deletedReviewIds);
+  const performanceReviews = useMemo(() => {
+    const deletedSet = new Set(deletedReviewIds);
+    return [...staticReviews, ...addedReviews].filter((r) => !deletedSet.has(r.id));
+  }, [addedReviews, deletedReviewIds]);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Get the latest review per employee, then sort by overallRating descending
