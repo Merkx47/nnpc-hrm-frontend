@@ -13,6 +13,7 @@ import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { formatDate } from '@/lib/formatters';
+import type { ExportColumn } from '@/lib/export-utils';
 import { attendanceRecords, leaveRequests as staticLeaveRequests } from '@/data/attendance';
 import { useDataStore } from '@/lib/data-store';
 import { employees } from '@/data/employees';
@@ -42,6 +43,26 @@ const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
   on_leave: 'On Leave',
   holiday: 'Holiday',
 };
+
+const attendanceExportColumns: ExportColumn[] = [
+  { header: 'Date', accessor: 'date', format: (v) => formatDate(v as string) },
+  { header: 'Employee', accessor: 'employeeName' },
+  { header: 'Employee ID', accessor: 'employeeId' },
+  { header: 'Status', accessor: 'status', format: (v) => ATTENDANCE_STATUS_LABELS[v as string] ?? String(v) },
+  { header: 'Check In', accessor: 'checkIn', format: (v) => (v as string) ?? '--' },
+  { header: 'Check Out', accessor: 'checkOut', format: (v) => (v as string) ?? '--' },
+];
+
+const leaveExportColumns: ExportColumn[] = [
+  { header: 'Employee', accessor: 'employeeName' },
+  { header: 'Employee ID', accessor: 'employeeId' },
+  { header: 'Type', accessor: 'type' },
+  { header: 'Start Date', accessor: 'startDate', format: (v) => formatDate(v as string) },
+  { header: 'End Date', accessor: 'endDate', format: (v) => formatDate(v as string) },
+  { header: 'Days', accessor: 'days' },
+  { header: 'Reason', accessor: 'reason' },
+  { header: 'Status', accessor: 'status', format: (v) => String(v).charAt(0).toUpperCase() + String(v).slice(1) },
+];
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'attendance', label: 'Attendance Records' },
@@ -257,6 +278,11 @@ export function AttendancePage() {
             pageSize={PAGE_SIZE}
             currentPage={attendancePage}
             onPageChange={setAttendancePage}
+            exportConfig={{
+              data: filteredAttendance as unknown as Record<string, unknown>[],
+              columns: attendanceExportColumns,
+              filename: 'attendance-records',
+            }}
           >
             <table className="w-full">
               <thead>
@@ -344,6 +370,11 @@ export function AttendancePage() {
             pageSize={PAGE_SIZE}
             currentPage={leavePage}
             onPageChange={setLeavePage}
+            exportConfig={{
+              data: filteredLeave as unknown as Record<string, unknown>[],
+              columns: leaveExportColumns,
+              filename: 'leave-requests',
+            }}
             toolbar={
               <button
                 onClick={handleRequestLeave}

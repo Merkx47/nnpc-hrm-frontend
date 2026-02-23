@@ -106,12 +106,23 @@ export function LoginPage() {
   const [otpError, setOtpError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [ssoLoading, setSsoLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const handleRoleChange = (role: Role) => {
     setSelectedRole(role);
     setEmail(getDefaultEmail(role));
     setPassword('password123');
+  };
+
+  const handleSsoLogin = () => {
+    setSsoLoading(true);
+    setTimeout(() => {
+      setSsoLoading(false);
+      setStep('otp');
+      setOtpSent(true);
+      startResendTimer();
+    }, 1500);
   };
 
   const startResendTimer = () => {
@@ -293,6 +304,43 @@ export function LoginPage() {
               <p className="text-emerald-300/50 text-sm mb-8">
                 Select a role and enter any credentials to continue.
               </p>
+
+              {/* Microsoft AD SSO */}
+              <button
+                type="button"
+                disabled={ssoLoading}
+                onClick={handleSsoLogin}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 disabled:opacity-60 transition-all flex items-center justify-center gap-3"
+              >
+                {ssoLoading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Connecting to Active Directory...
+                  </span>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 21 21" className="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                    </svg>
+                    Sign in with Active Directory
+                  </>
+                )}
+              </button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-[#0d1f14] px-3 text-xs text-emerald-300/40 uppercase tracking-wider">or sign in with credentials</span>
+                </div>
+              </div>
 
               <form onSubmit={handleCredentialsSubmit} className="space-y-5">
                 {/* Role Selector */}

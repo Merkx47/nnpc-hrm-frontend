@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  ArrowLeftRight, Send, Calendar, Filter, X, Lock, Trash2,
+  ArrowLeftRight, Send, Calendar, Filter, Search, X, Lock, Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSubmitApproval } from '@/lib/use-submit-approval';
@@ -14,6 +14,7 @@ import { TableWrapper } from '@/components/shared/table-wrapper';
 import { formatDate } from '@/lib/formatters';
 import { employees } from '@/data/employees';
 import { stations } from '@/data/stations';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { TransferStatus } from '@/types';
 
 const PAGE_SIZE = 10;
@@ -101,6 +102,7 @@ export function TransfersPage() {
   const submitApproval = useSubmitApproval();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Transfer form state
@@ -120,9 +122,30 @@ export function TransfersPage() {
   }, [addedTransfers, deletedTransferIds]);
 
   const filteredTransfers = useMemo(() => {
-    if (statusFilter === 'all') return allTransfers;
-    return allTransfers.filter((t) => t.status === statusFilter);
-  }, [allTransfers, statusFilter]);
+    return allTransfers.filter((t) => {
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return (
+          t.employeeName.toLowerCase().includes(q) ||
+          t.employeeId.toLowerCase().includes(q) ||
+          t.fromStationName.toLowerCase().includes(q) ||
+          t.toStationName.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [allTransfers, statusFilter, searchQuery]);
+
+  const exportColumns: ExportColumn[] = [
+    { header: 'Employee', accessor: 'employeeName' },
+    { header: 'Employee ID', accessor: 'employeeId' },
+    { header: 'From', accessor: 'fromStationName' },
+    { header: 'To', accessor: 'toStationName' },
+    { header: 'Effective Date', accessor: 'effectiveDate', format: (v) => formatDate(String(v)) },
+    { header: 'Status', accessor: 'status' },
+    { header: 'Reason', accessor: 'reason' },
+  ];
 
   const paginatedTransfers = filteredTransfers.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -291,8 +314,19 @@ export function TransfersPage() {
             pageSize={PAGE_SIZE}
             currentPage={currentPage}
             onPageChange={setCurrentPage}
+            exportConfig={{ data: filteredTransfers as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'transfers' }}
             toolbar={
               <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+                  <input
+                    type="text"
+                    placeholder="Search transfers..."
+                    className="rounded-lg border border-[var(--input)] bg-[var(--background)] pl-8 pr-3 py-1 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] w-48"
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
                 <Filter className="h-4 w-4 text-[var(--muted-foreground)]" />
                 <select
                   className="rounded-lg border border-[var(--input)] bg-[var(--background)] px-2 py-1 text-sm text-[var(--foreground)] focus:outline-none"

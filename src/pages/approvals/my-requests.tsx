@@ -8,8 +8,19 @@ import { useAppStore } from '@/lib/store';
 import { useApprovalStore } from '@/lib/approval-store';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
+import { ExportDropdown } from '@/components/shared/export-dropdown';
 import { ROLE_LABELS, APPROVAL_STATUS_LABELS, APPROVAL_STATUS_COLORS, APPROVAL_ACTION_LABELS } from '@/lib/constants';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { ApprovalStatus } from '@/types';
+
+const myRequestsExportColumns: ExportColumn[] = [
+  { header: 'Request ID', accessor: 'id' },
+  { header: 'Action', accessor: 'actionLabel' },
+  { header: 'Status', accessor: 'status', format: (v) => (APPROVAL_STATUS_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Reviewer Role', accessor: 'reviewerRole', format: (v) => (ROLE_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Reviewer', accessor: 'reviewerName', format: (v) => (v as string) ?? '—' },
+  { header: 'Submitted', accessor: 'submittedAt', format: (v) => new Date(v as string).toLocaleDateString('en-NG', { dateStyle: 'medium' }) },
+];
 
 export function MyRequestsPage() {
   const { currentUser } = useAppStore();
@@ -94,13 +105,20 @@ export function MyRequestsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search requests…"
-          className="w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-9 pr-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search requests…"
+            className="w-full rounded-lg border border-[var(--input)] bg-[var(--background)] pl-9 pr-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+          />
+        </div>
+        <ExportDropdown
+          data={filtered as unknown as Record<string, unknown>[]}
+          columns={myRequestsExportColumns}
+          filename="my-requests"
         />
       </div>
 

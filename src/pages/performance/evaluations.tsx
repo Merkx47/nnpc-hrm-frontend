@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
+import type { ExportColumn } from '@/lib/export-utils';
 import { performanceReviews as staticReviews } from '@/data/performance-reviews';
 import { useDataStore } from '@/lib/data-store';
 
@@ -49,6 +50,21 @@ export function EvaluationsPage() {
       (a, b) => b.overallRating - a.overallRating
     );
   }, []);
+
+  const exportColumns: ExportColumn[] = [
+    { header: 'Rank', accessor: 'overallRating', format: (_v, row) => {
+      const idx = rankedEmployees.findIndex((r) => r.employeeId === String(row.employeeId));
+      return String(idx + 1);
+    }},
+    { header: 'Employee', accessor: 'employeeName' },
+    { header: 'Employee ID', accessor: 'employeeId' },
+    { header: 'Overall', accessor: 'overallRating', format: (v) => Number(v).toFixed(1) },
+    { header: 'Sales', accessor: 'salesRating', format: (v) => `${v}/5` },
+    { header: 'Punctuality', accessor: 'punctualityRating', format: (v) => `${v}/5` },
+    { header: 'Customer Service', accessor: 'customerServiceRating', format: (v) => `${v}/5` },
+    { header: 'Teamwork', accessor: 'teamworkRating', format: (v) => `${v}/5` },
+    { header: 'Training', accessor: 'trainingRating', format: (v) => `${v}/5` },
+  ];
 
   const paginatedEmployees = rankedEmployees.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -124,6 +140,7 @@ export function EvaluationsPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{ data: rankedEmployees as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'evaluations' }}
       >
         <table className="w-full">
           <thead>

@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { salesTargets as staticSalesTargets } from '@/data/sales-targets';
 import { useDataStore } from '@/lib/data-store';
+import type { ExportColumn } from '@/lib/export-utils';
 import { formatNaira } from '@/lib/formatters';
 
 type Period = 'all' | 'daily' | 'weekly' | 'monthly';
@@ -100,6 +101,21 @@ export function SalesTargetsPage() {
     }
     return targets;
   }, [periodFilter, productFilter, isGlobalFilterActive, globalStationIds]);
+
+  const exportColumns: ExportColumn[] = [
+    { header: 'Employee', accessor: 'employeeName' },
+    { header: 'Employee ID', accessor: 'employeeId' },
+    { header: 'Station', accessor: 'stationId' },
+    { header: 'Product', accessor: 'product' },
+    { header: 'Target', accessor: 'targetAmount', format: (v) => formatNaira(Number(v)) },
+    { header: 'Actual', accessor: 'actualAmount', format: (v) => formatNaira(Number(v)) },
+    { header: 'Achievement', accessor: 'targetAmount', format: (_v, row) => {
+      const target = Number(row.targetAmount);
+      const actual = Number(row.actualAmount);
+      return target > 0 ? `${Math.round((actual / target) * 100)}%` : '0%';
+    }},
+    { header: 'Period', accessor: 'period', format: (v) => String(v).charAt(0).toUpperCase() + String(v).slice(1) },
+  ];
 
   const paginatedTargets = filteredTargets.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -364,6 +380,7 @@ export function SalesTargetsPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{ data: filteredTargets as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'sales-targets' }}
       >
         <table className="w-full">
           <thead>

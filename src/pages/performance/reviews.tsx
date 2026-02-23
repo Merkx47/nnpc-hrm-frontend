@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { performanceReviews as staticReviews } from '@/data/performance-reviews';
 import { useDataStore } from '@/lib/data-store';
+import type { ExportColumn } from '@/lib/export-utils';
 import { formatDate } from '@/lib/formatters';
 
 function getRatingBadgeColor(rating: number): string {
@@ -72,6 +73,18 @@ export function PerformanceReviewsPage() {
     }
     return reviews.sort((a, b) => b.date.localeCompare(a.date));
   }, [periodFilter]);
+
+  const exportColumns: ExportColumn[] = [
+    { header: 'Employee', accessor: 'employeeName' },
+    { header: 'Employee ID', accessor: 'employeeId' },
+    { header: 'Period', accessor: 'reviewPeriod' },
+    { header: 'Overall', accessor: 'overallRating', format: (v) => Number(v).toFixed(1) },
+    { header: 'Sales', accessor: 'salesRating', format: (v) => `${v}/5` },
+    { header: 'Punctuality', accessor: 'punctualityRating', format: (v) => `${v}/5` },
+    { header: 'Customer Service', accessor: 'customerServiceRating', format: (v) => `${v}/5` },
+    { header: 'Reviewer', accessor: 'reviewerName' },
+    { header: 'Date', accessor: 'date', format: (v) => formatDate(String(v)) },
+  ];
 
   const paginatedReviews = filteredReviews.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -365,6 +378,7 @@ export function PerformanceReviewsPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{ data: filteredReviews as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'performance-reviews' }}
       >
         <table className="w-full">
           <thead>

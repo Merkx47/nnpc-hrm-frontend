@@ -34,7 +34,9 @@ import { ApprovalsQueuePage } from '@/pages/approvals/pending';
 import { MyRequestsPage } from '@/pages/approvals/my-requests';
 import { ApprovalDetailPage } from '@/pages/approvals/detail';
 import { AllRequestsPage } from '@/pages/approvals/all-requests';
+import { AuditLogPage } from '@/pages/audit-log';
 import { useApprovalStore } from '@/lib/approval-store';
+import { useAuditStore } from '@/lib/audit-store';
 import { Toaster } from 'sonner';
 
 // Placeholder component for pages not yet built
@@ -56,6 +58,7 @@ function ProtectedRoutes() {
   const [location] = useLocation();
 
   const initializeMockData = useApprovalStore((s) => s.initializeMockData);
+  const initializeAuditData = useAuditStore((s) => s.initializeMockData);
 
   // Auto-load notifications when user is logged in but notifications are empty
   // (e.g. after a page refresh — notifications are not persisted in localStorage)
@@ -67,12 +70,13 @@ function ProtectedRoutes() {
     }
   }, [currentUser, notifications.length, setNotifications]);
 
-  // Initialize approval mock data
+  // Initialize approval + audit mock data
   useEffect(() => {
     if (currentUser) {
       initializeMockData();
+      initializeAuditData();
     }
-  }, [currentUser, initializeMockData]);
+  }, [currentUser, initializeMockData, initializeAuditData]);
 
   if (!currentUser) {
     return <Redirect to="/login" />;
@@ -132,6 +136,9 @@ function ProtectedRoutes() {
         <Route path="/compensation/salary" component={SalaryRecordsPage} />
         <Route path="/compensation/bonuses" component={BonusesPage} />
         <Route path="/compensation/pay-history" component={PayHistoryPage} />
+
+        {/* Audit Log */}
+        <Route path="/audit-log" component={AuditLogPage} />
 
         {/* Reports, Stations, Documents, Notifications, Settings */}
         <Route path="/reports" component={ReportsPage} />

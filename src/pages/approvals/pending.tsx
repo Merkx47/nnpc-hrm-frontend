@@ -9,8 +9,19 @@ import { getUserScope, isRequestInScope } from '@/lib/scope';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { ApprovalReviewModal } from '@/components/shared/approval-review-modal';
+import { ExportDropdown } from '@/components/shared/export-dropdown';
 import { ROLE_LABELS, APPROVAL_STATUS_COLORS, APPROVAL_ACTION_LABELS } from '@/lib/constants';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { ApprovalRequest, ApprovalStatus } from '@/types';
+
+const pendingExportColumns: ExportColumn[] = [
+  { header: 'Request ID', accessor: 'id' },
+  { header: 'Submitter', accessor: 'submittedByName' },
+  { header: 'Role', accessor: 'submittedByRole', format: (v) => (ROLE_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Action', accessor: 'actionType', format: (v) => (APPROVAL_ACTION_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Submitted', accessor: 'submittedAt', format: (v) => new Date(v as string).toLocaleDateString('en-NG', { dateStyle: 'medium' }) },
+  { header: 'Status', accessor: 'status' },
+];
 
 export function ApprovalsQueuePage() {
   const { currentUser } = useAppStore();
@@ -111,6 +122,11 @@ export function ApprovalsQueuePage() {
             <option key={t} value={t}>{APPROVAL_ACTION_LABELS[t]}</option>
           ))}
         </select>
+        <ExportDropdown
+          data={filtered as unknown as Record<string, unknown>[]}
+          columns={pendingExportColumns}
+          filename="pending-approvals"
+        />
       </div>
 
       {/* Request Cards */}

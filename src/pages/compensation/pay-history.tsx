@@ -5,11 +5,22 @@ import {
 } from 'lucide-react';
 import { usePermission } from '@/lib/rbac';
 import { NairaIcon } from '@/components/shared/naira-icon';
+import { ExportDropdown } from '@/components/shared/export-dropdown';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { salaryRecords } from '@/data/salary-records';
 import { formatNaira } from '@/lib/formatters';
+import type { ExportColumn } from '@/lib/export-utils';
+
+const payHistoryExportColumns: ExportColumn[] = [
+  { header: 'Month/Year', accessor: 'month', format: (_, row) => `${row.month} ${row.year}` },
+  { header: 'Base Salary (NGN)', accessor: 'baseSalary', format: (v) => formatNaira(v as number) },
+  { header: 'Allowances (NGN)', accessor: 'transportAllowance', format: (_, row) => formatNaira((row.transportAllowance as number) + (row.housingAllowance as number) + (row.otherAllowances as number)) },
+  { header: 'Bonuses (NGN)', accessor: 'bonuses', format: (v) => (v as number) > 0 ? formatNaira(v as number) : '—' },
+  { header: 'Deductions (NGN)', accessor: 'deductions', format: (v) => formatNaira(v as number) },
+  { header: 'Net Pay (NGN)', accessor: 'netPay', format: (v) => formatNaira(v as number) },
+];
 
 export function PayHistoryPage() {
   const canViewCompensation = usePermission('view_compensation');
@@ -140,10 +151,17 @@ export function PayHistoryPage() {
         transition={{ delay: 0.4 }}
         className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] overflow-hidden"
       >
-        <div className="px-4 py-3 border-b border-[var(--border)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
           <h3 className="text-sm font-semibold text-[var(--foreground)]">
             Payment History for {selectedName}
           </h3>
+          {employeeRecords.length > 0 && (
+            <ExportDropdown
+              data={employeeRecords as unknown as Record<string, unknown>[]}
+              columns={payHistoryExportColumns}
+              filename={`pay-history-${selectedName.replace(/\s+/g, '-').toLowerCase()}`}
+            />
+          )}
         </div>
 
         <div className="overflow-x-auto">

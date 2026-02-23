@@ -14,7 +14,21 @@ import { TableWrapper } from '@/components/shared/table-wrapper';
 import { salaryRecords } from '@/data/salary-records';
 import { employees } from '@/data/employees';
 import { formatNaira } from '@/lib/formatters';
+import type { ExportColumn } from '@/lib/export-utils';
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/constants';
+
+const salaryExportColumns: ExportColumn[] = [
+  { header: 'Employee', accessor: 'employeeName' },
+  { header: 'Employee ID', accessor: 'employeeId' },
+  { header: 'Role', accessor: 'role', format: (v) => (ROLE_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Station', accessor: 'stationName' },
+  { header: 'Base Salary (NGN)', accessor: 'baseSalary', format: (v) => formatNaira(v as number) },
+  { header: 'Allowances (NGN)', accessor: 'transportAllowance', format: (_, row) => formatNaira((row.transportAllowance as number) + (row.housingAllowance as number) + (row.otherAllowances as number)) },
+  { header: 'Bonuses (NGN)', accessor: 'bonuses', format: (v) => (v as number) > 0 ? formatNaira(v as number) : '—' },
+  { header: 'Deductions (NGN)', accessor: 'deductions', format: (v) => formatNaira(v as number) },
+  { header: 'Net Pay (NGN)', accessor: 'netPay', format: (v) => formatNaira(v as number) },
+  { header: 'Month/Year', accessor: 'month', format: (_, row) => `${row.month} ${row.year}` },
+];
 
 const PAGE_SIZE = 10;
 
@@ -139,6 +153,11 @@ export function SalaryRecordsPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{
+          data: filtered as unknown as Record<string, unknown>[],
+          columns: salaryExportColumns,
+          filename: 'salary-records',
+        }}
         toolbar={
           <>
             <div className="relative flex-1 w-full sm:max-w-xs">

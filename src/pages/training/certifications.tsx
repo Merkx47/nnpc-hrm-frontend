@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Award, ShieldCheck, AlertTriangle, XCircle, Filter,
-  Search, Calendar,
+  Search, Calendar, FileDown,
 } from 'lucide-react';
+import { CertificateModal } from '@/components/shared/certificate-modal';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
 import { PageHeader } from '@/components/shared/page-header';
@@ -137,6 +138,7 @@ export function CertificationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCert, setSelectedCert] = useState<CertificationRecord | null>(null);
 
   // Filtered certifications
   const filteredCertifications = useMemo(() => {
@@ -260,12 +262,15 @@ export function CertificationsPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)] uppercase">
                 Status
               </th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-[var(--muted-foreground)] uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {paginatedCertifications.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center">
+                <td colSpan={6} className="px-4 py-12 text-center">
                   <Award className="h-8 w-8 mx-auto mb-2 text-[var(--muted-foreground)]" />
                   <p className="text-sm text-[var(--muted-foreground)]">
                     No certifications found
@@ -309,12 +314,30 @@ export function CertificationsPage() {
                       colorClass={CERTIFICATION_STATUS_COLORS[cert.status]}
                     />
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => setSelectedCert(cert)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--input)] px-2.5 py-1.5 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
+                      title="Generate Certificate"
+                    >
+                      <FileDown className="h-3.5 w-3.5" />
+                      Generate
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </TableWrapper>
+
+      {selectedCert && (
+        <CertificateModal
+          isOpen={!!selectedCert}
+          onClose={() => setSelectedCert(null)}
+          certification={selectedCert}
+        />
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { formatDate } from '@/lib/formatters';
 import { trainingModules, trainingAssignments as staticTrainingAssignments } from '@/data/training-modules';
 import { useDataStore } from '@/lib/data-store';
 import { employees } from '@/data/employees';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { TrainingStatus } from '@/types';
 
 const TRAINING_STATUS_LABELS: Record<TrainingStatus, string> = {
@@ -164,6 +165,15 @@ export function AssignTrainingPage() {
     currentPage * PAGE_SIZE
   );
 
+  const exportColumns: ExportColumn[] = [
+    { header: 'Employee ID', accessor: 'employeeId' },
+    { header: 'Employee', accessor: 'employeeName' },
+    { header: 'Module', accessor: 'moduleName' },
+    { header: 'Status', accessor: 'status', format: (v) => TRAINING_STATUS_LABELS[v as TrainingStatus] ?? String(v) },
+    { header: 'Score', accessor: 'score', format: (v) => (v != null ? `${v}%` : '--') },
+    { header: 'Deadline', accessor: 'deadline', format: (v) => formatDate(String(v)) },
+  ];
+
   const inputClass =
     'w-full rounded-lg border border-[var(--input)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]';
 
@@ -306,6 +316,7 @@ export function AssignTrainingPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{ data: filteredAssignments as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'training-assignments' }}
         toolbar={
           <>
             <div className="relative">

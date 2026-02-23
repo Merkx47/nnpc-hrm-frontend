@@ -10,6 +10,15 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { TableWrapper } from '@/components/shared/table-wrapper';
 import { formatNaira } from '@/lib/formatters';
+import type { ExportColumn } from '@/lib/export-utils';
+
+const bonusExportColumns: ExportColumn[] = [
+  { header: 'Employee', accessor: 'employeeName' },
+  { header: 'Type', accessor: 'type' },
+  { header: 'Amount (NGN)', accessor: 'amount', format: (v) => formatNaira(v as number) },
+  { header: 'Month', accessor: 'month', format: (_, row) => `${row.month} ${row.year}` },
+  { header: 'Status', accessor: 'status' },
+];
 
 type BonusType = 'Transport' | 'Housing' | 'Performance' | 'Overtime';
 type BonusStatus = 'Paid' | 'Pending';
@@ -148,6 +157,11 @@ export function BonusesPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{
+          data: filtered as unknown as Record<string, unknown>[],
+          columns: bonusExportColumns,
+          filename: 'bonuses-allowances',
+        }}
         toolbar={
           <>
             <div className="relative flex-1 w-full sm:max-w-xs">

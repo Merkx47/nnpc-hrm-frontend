@@ -15,7 +15,18 @@ import {
   APPROVAL_ACTION_LABELS,
 } from '@/lib/constants';
 import { formatDate } from '@/lib/formatters';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { ApprovalStatus } from '@/types';
+
+const allRequestsExportColumns: ExportColumn[] = [
+  { header: 'ID', accessor: 'id' },
+  { header: 'Submitter', accessor: 'submittedByName' },
+  { header: 'Role', accessor: 'submittedByRole', format: (v) => (ROLE_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Action', accessor: 'actionType', format: (v) => (APPROVAL_ACTION_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Reviewer', accessor: 'reviewerName', format: (v, row) => (v as string) ?? (ROLE_LABELS as Record<string, string>)[row.reviewerRole as string] ?? '' },
+  { header: 'Status', accessor: 'status', format: (v) => (APPROVAL_STATUS_LABELS as Record<string, string>)[v as string] ?? String(v) },
+  { header: 'Date', accessor: 'submittedAt', format: (v) => formatDate(v as string) },
+];
 
 const PAGE_SIZE = 15;
 
@@ -84,6 +95,11 @@ export function AllRequestsPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{
+          data: filtered as unknown as Record<string, unknown>[],
+          columns: allRequestsExportColumns,
+          filename: 'all-approval-requests',
+        }}
         toolbar={
           <>
             <div className="relative">

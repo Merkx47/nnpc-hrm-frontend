@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 import {
-  Activity, Search, Filter, LogIn, LogOut, Clock, TrendingUp,
+  Activity, Search, Filter, Clock, TrendingUp,
 } from 'lucide-react';
+import type { ExportColumn } from '@/lib/export-utils';
 import { NairaIcon } from '@/components/shared/naira-icon';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
@@ -103,17 +103,17 @@ export function ActivityLogPage() {
     setCurrentPage(1);
   };
 
-  const handleCheckIn = (employeeName: string) => {
-    toast.success('Check In Recorded', {
-      description: `${employeeName} has been checked in successfully.`,
-    });
-  };
-
-  const handleCheckOut = (employeeName: string) => {
-    toast.success('Check Out Recorded', {
-      description: `${employeeName} has been checked out successfully.`,
-    });
-  };
+  const exportColumns: ExportColumn[] = [
+    { header: 'Date', accessor: 'date' },
+    { header: 'Employee', accessor: 'employeeName' },
+    { header: 'Shift', accessor: 'shift', format: (v) => SHIFT_LABELS[v as keyof typeof SHIFT_LABELS] ?? String(v) },
+    { header: 'Check In', accessor: 'checkInTime', format: (v) => (v as string) ?? '--:--' },
+    { header: 'Check Out', accessor: 'checkOutTime', format: (v) => (v as string) ?? '--:--' },
+    { header: 'Pump', accessor: 'pumpAssignment' },
+    { header: 'Sales (₦)', accessor: 'salesFigure', format: (v) => formatNaira(v as number) },
+    { header: 'Hours', accessor: 'hoursWorked', format: (v) => String(v) },
+    { header: 'Notes', accessor: 'notes', format: (v) => (v as string) ?? '-' },
+  ];
 
   const getStationName = (stationId: string) => {
     const station = stations.find((s) => s.id === stationId);
@@ -237,6 +237,7 @@ export function ActivityLogPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{ data: filteredShifts as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'activity-log' }}
       >
         <table className="w-full">
           <thead>
@@ -268,16 +269,13 @@ export function ActivityLogPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)] uppercase">
                 Notes
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-[var(--muted-foreground)] uppercase">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody>
             {paginatedShifts.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={9}
                   className="px-4 py-8 text-center text-sm text-[var(--muted-foreground)]"
                 >
                   No activity logs found for the selected filters.
@@ -325,26 +323,6 @@ export function ActivityLogPage() {
                   </td>
                   <td className="px-4 py-3 text-sm text-[var(--muted-foreground)] max-w-[180px] truncate">
                     {entry.notes ?? '-'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        onClick={() => handleCheckIn(entry.employeeName)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-[var(--primary)] px-2.5 py-1.5 text-xs font-medium text-[var(--primary-foreground)] hover:opacity-90 transition-opacity"
-                        title="Check In"
-                      >
-                        <LogIn className="h-3 w-3" />
-                        In
-                      </button>
-                      <button
-                        onClick={() => handleCheckOut(entry.employeeName)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--input)] bg-[var(--background)] px-2.5 py-1.5 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
-                        title="Check Out"
-                      >
-                        <LogOut className="h-3 w-3" />
-                        Out
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))

@@ -15,6 +15,7 @@ import { INCIDENT_LABELS, SEVERITY_COLORS } from '@/lib/constants';
 import { incidents as staticIncidents } from '@/data/incidents';
 import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { IncidentType, Severity, IncidentStatus } from '@/types';
 
 const PAGE_SIZE = 10;
@@ -100,6 +101,16 @@ export function IncidentsPage() {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
   );
+
+  const exportColumns: ExportColumn[] = [
+    { header: 'Date', accessor: 'date', format: (v) => formatDate(String(v)) },
+    { header: 'Station', accessor: 'stationName' },
+    { header: 'Reporter', accessor: 'reporterName' },
+    { header: 'Type', accessor: 'type', format: (v) => INCIDENT_LABELS[v as IncidentType] ?? String(v) },
+    { header: 'Severity', accessor: 'severity', format: (v) => SEVERITY_LABELS[v as Severity] ?? String(v) },
+    { header: 'Status', accessor: 'status', format: (v) => STATUS_LABELS[v as IncidentStatus] ?? String(v) },
+    { header: 'Description', accessor: 'description' },
+  ];
 
   const hasActiveFilters = typeFilter !== 'all' || severityFilter !== 'all' || statusFilter !== 'all';
 
@@ -324,6 +335,7 @@ export function IncidentsPage() {
         pageSize={PAGE_SIZE}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        exportConfig={{ data: filteredIncidents as unknown as Record<string, unknown>[], columns: exportColumns, filename: 'incidents' }}
         toolbar={
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">

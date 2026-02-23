@@ -252,6 +252,12 @@ export const SIDEBAR_NAV: NavItem[] = [
     ],
   },
   {
+    label: 'Audit Log',
+    href: '/audit-log',
+    icon: 'FileText',
+    roles: ['admin', 'regional_manager'],
+  },
+  {
     label: 'Compensation',
     href: '/compensation/salary',
     icon: 'Wallet',

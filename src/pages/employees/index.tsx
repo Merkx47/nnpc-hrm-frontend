@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-table';
 import {
   Users, UserPlus, UserCheck, UserX, Clock,
-  Search, Filter, Download, ChevronUp, ChevronDown,
+  Search, Filter, ChevronUp, ChevronDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,8 @@ import { useDataStore } from '@/lib/data-store';
 import { stations } from '@/data/stations';
 import { getFilteredStationIds } from '@/data/dashboard-data';
 import { usePermission } from '@/lib/rbac';
+import { ExportDropdown } from '@/components/shared/export-dropdown';
+import type { ExportColumn } from '@/lib/export-utils';
 import type { Employee, Role, EmploymentStatus } from '@/types';
 
 const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
@@ -215,27 +217,16 @@ export function EmployeesPage() {
     setStatusFilter('all');
   };
 
-  const exportCSV = () => {
-    const headers = ['NRL ID', 'First Name', 'Last Name', 'Role', 'Station', 'Dealer', 'Status', 'Year'];
-    const rows = filteredData.map((e) => [
-      e.id,
-      e.firstName,
-      e.lastName,
-      ROLE_LABELS[e.role],
-      stationMap.get(e.stationId)?.name ?? e.stationId,
-      e.dealerName,
-      EMPLOYMENT_STATUS_LABELS[e.employmentStatus],
-      e.yearOfEmployment,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `employees_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const exportColumns: ExportColumn[] = [
+    { header: 'NRL ID', accessor: 'id' },
+    { header: 'First Name', accessor: 'firstName' },
+    { header: 'Last Name', accessor: 'lastName' },
+    { header: 'Role', accessor: 'role', format: (v) => ROLE_LABELS[v as Role] ?? String(v) },
+    { header: 'Station', accessor: 'stationId', format: (v, row) => stationMap.get(v as string)?.name ?? String(v) },
+    { header: 'Dealer', accessor: 'dealerName' },
+    { header: 'Status', accessor: 'employmentStatus' },
+    { header: 'Year', accessor: 'yearOfEmployment', format: (v) => String(v) },
+  ];
 
   return (
     <div className="space-y-6">
@@ -305,13 +296,11 @@ export function EmployeesPage() {
                 )}
               </button>
 
-              <button
-                onClick={exportCSV}
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--input)] px-3 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </button>
+              <ExportDropdown
+                data={table.getFilteredRowModel().rows.map(r => r.original) as unknown as Record<string, unknown>[]}
+                columns={exportColumns}
+                filename="employees"
+              />
             </div>
           </div>
 

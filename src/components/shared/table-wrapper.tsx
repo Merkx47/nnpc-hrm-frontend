@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ExportDropdown } from '@/components/shared/export-dropdown';
+import type { ExportColumn } from '@/lib/export-utils';
 
 interface TableWrapperProps {
   title?: string;
@@ -14,6 +16,11 @@ interface TableWrapperProps {
   onPageChange: (page: number) => void;
   onRefresh?: () => void;
   className?: string;
+  exportConfig?: {
+    data: Record<string, unknown>[];
+    columns: ExportColumn[];
+    filename: string;
+  };
 }
 
 export function TableWrapper({
@@ -27,6 +34,7 @@ export function TableWrapper({
   onPageChange,
   onRefresh,
   className,
+  exportConfig,
 }: TableWrapperProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -68,7 +76,16 @@ export function TableWrapper({
               />
             </button>
           </div>
-          {toolbar && <div className="flex items-center gap-2 flex-wrap">{toolbar}</div>}
+          <div className="flex items-center gap-2 flex-wrap">
+            {toolbar}
+            {exportConfig && (
+              <ExportDropdown
+                data={exportConfig.data}
+                columns={exportConfig.columns}
+                filename={exportConfig.filename}
+              />
+            )}
+          </div>
         </div>
       )}
 
