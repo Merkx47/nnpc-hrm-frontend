@@ -117,12 +117,12 @@ export function LoginPage() {
 
   const handleSsoLogin = () => {
     setSsoLoading(true);
+    // Real AD SSO: redirect to Azure AD → authenticate → token returned → logged in.
+    // No separate OTP — Microsoft handles MFA on their side.
     setTimeout(() => {
       setSsoLoading(false);
-      setStep('otp');
-      setOtpSent(true);
-      startResendTimer();
-    }, 1500);
+      completeLogin();
+    }, 2000);
   };
 
   const startResendTimer = () => {
