@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -7,8 +7,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/shared/page-header';
+import { SearchableSelect } from '@/components/shared/searchable-select';
+import type { SelectOption } from '@/components/shared/searchable-select';
 import { ROLE_LABELS } from '@/lib/constants';
 import { stations } from '@/data/stations';
+import { regions } from '@/data/regions';
 import { NIGERIAN_STATES } from '@/data/nigerian-states';
 import type { Role, IDType } from '@/types';
 
@@ -45,6 +48,8 @@ interface FormData {
   stationId: string;
   role: string;
   yearOfEmployment: string;
+  regionId: string;
+  branchId: string;
 }
 
 const initialFormData: FormData = {
@@ -69,6 +74,8 @@ const initialFormData: FormData = {
   stationId: '',
   role: 'attendant',
   yearOfEmployment: '2026',
+  regionId: '',
+  branchId: '',
 };
 
 function FormField({
@@ -90,6 +97,40 @@ function FormField({
 
 const inputClass = 'w-full rounded-lg border border-[var(--input)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]';
 
+/* ── Pre-compute dropdown options ─────────────────── */
+
+const stateOptions: SelectOption[] = NIGERIAN_STATES.map((s) => ({
+  value: s.name,
+  label: s.name,
+}));
+
+const idTypeOptions: SelectOption[] = ID_TYPES.map((t) => ({
+  value: t,
+  label: t,
+}));
+
+const genderOptions: SelectOption[] = GENDERS.map((g) => ({
+  value: g,
+  label: g,
+}));
+
+const roleOptions: SelectOption[] = ROLES.map((r) => ({
+  value: r,
+  label: ROLE_LABELS[r],
+}));
+
+const regionOptions: SelectOption[] = regions.map((r) => ({
+  value: r.id,
+  label: r.name,
+  subtitle: r.states.slice(0, 3).join(', ') + (r.states.length > 3 ? '…' : ''),
+}));
+
+const stationOptions: SelectOption[] = stations.map((s) => ({
+  value: s.id,
+  label: s.name,
+  subtitle: `${s.city}, ${s.state} — ${s.branch}`,
+}));
+
 export function AddEmployeePage() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
@@ -103,10 +144,29 @@ export function AddEmployeePage() {
 
   // Get LGAs for selected state
   const selectedState = NIGERIAN_STATES.find((s) => s.name === form.stateOfOrigin);
-  const lgas = selectedState?.lgas ?? [];
+  const lgaOptions: SelectOption[] = useMemo(
+    () => (selectedState?.lgas ?? []).map((l) => ({ value: l, label: l })),
+    [selectedState]
+  );
 
-  // Get dealer for selected station
+  // Get branches filtered by selected region
+  const branchOptions: SelectOption[] = useMemo(() => {
+    if (!form.regionId) {
+      return regions.flatMap((r) =>
+        r.branches.map((b) => ({ value: b.id, label: b.name, subtitle: r.name }))
+      );
+    }
+    const reg = regions.find((r) => r.id === form.regionId);
+    return (reg?.branches ?? []).map((b) => ({ value: b.id, label: b.name, subtitle: reg?.name }));
+  }, [form.regionId]);
+
+  // Get station for display info
   const selectedStation = stations.find((s) => s.id === form.stationId);
+
+  // Role-based field logic
+  const roleNeedsRegion = form.role === 'regional_manager';
+  const roleNeedsBranch = form.role === 'branch_manager';
+  const roleNeedsStation = ['dealer', 'supervisor', 'attendant'].includes(form.role);
 
   const validateStep = (s: number): boolean => {
     const errs: Partial<Record<keyof FormData, string>> = {};
@@ -126,8 +186,10 @@ export function AddEmployeePage() {
     }
 
     if (s === 2) {
-      if (!form.stationId) errs.stationId = 'Required';
       if (!form.role) errs.role = 'Required';
+      if (roleNeedsRegion && !form.regionId) errs.regionId = 'Select a region for this role';
+      if (roleNeedsBranch && !form.branchId) errs.branchId = 'Select a branch for this role';
+      if (roleNeedsStation && !form.stationId) errs.stationId = 'Select a station for this role';
     }
 
     setErrors(errs);
@@ -206,13 +268,24 @@ export function AddEmployeePage() {
         className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6"
       >
         {step === 1 && (
-          <Step1Personal form={form} errors={errors} update={update} lgas={lgas} />
+          <Step1Personal form={form} errors={errors} update={update} lgaOptions={lgaOptions} />
         )}
         {step === 2 && (
-          <Step2Employment form={form} errors={errors} update={update} selectedStation={selectedStation} />
+          <Step2Employment
+            form={form}
+            errors={errors}
+            update={update}
+            selectedStation={selectedStation}
+            branchOptions={branchOptions}
+            roleNeedsRegion={roleNeedsRegion}
+            roleNeedsBranch={roleNeedsBranch}
+            roleNeedsStation={roleNeedsStation}
+          />
         )}
         {step === 3 && <Step3Documents />}
-        {step === 4 && <Step4Review form={form} selectedStation={selectedStation} setStep={setStep} />}
+        {step === 4 && (
+          <Step4Review form={form} selectedStation={selectedStation} setStep={setStep} />
+        )}
       </motion.div>
 
       {/* Navigation Buttons */}
@@ -250,12 +323,12 @@ export function AddEmployeePage() {
 
 /* ───────── Step 1: Personal Details ───────── */
 function Step1Personal({
-  form, errors, update, lgas,
+  form, errors, update, lgaOptions,
 }: {
   form: FormData;
   errors: Partial<Record<keyof FormData, string>>;
   update: (field: keyof FormData, value: string) => void;
-  lgas: string[];
+  lgaOptions: SelectOption[];
 }) {
   return (
     <div className="space-y-6">
@@ -281,22 +354,24 @@ function Step1Personal({
           <input className={inputClass} type="date" value={form.dateOfBirth} onChange={(e) => update('dateOfBirth', e.target.value)} />
         </FormField>
         <FormField label="Gender" required error={errors.gender}>
-          <select className={inputClass} value={form.gender} onChange={(e) => update('gender', e.target.value)}>
-            <option value="">Select Gender</option>
-            {GENDERS.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
+          <SearchableSelect options={genderOptions} value={form.gender} onChange={(v) => update('gender', v)} placeholder="Select Gender" />
         </FormField>
         <FormField label="State of Origin" required error={errors.stateOfOrigin}>
-          <select className={inputClass} value={form.stateOfOrigin} onChange={(e) => { update('stateOfOrigin', e.target.value); update('lga', ''); }}>
-            <option value="">Select State</option>
-            {NIGERIAN_STATES.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
-          </select>
+          <SearchableSelect
+            options={stateOptions}
+            value={form.stateOfOrigin}
+            onChange={(v) => { update('stateOfOrigin', v); update('lga', ''); }}
+            placeholder="Search states…"
+          />
         </FormField>
         <FormField label="LGA" required error={errors.lga}>
-          <select className={inputClass} value={form.lga} onChange={(e) => update('lga', e.target.value)} disabled={!form.stateOfOrigin}>
-            <option value="">Select LGA</option>
-            {lgas.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
+          <SearchableSelect
+            options={lgaOptions}
+            value={form.lga}
+            onChange={(v) => update('lga', v)}
+            placeholder="Search LGAs…"
+            disabled={!form.stateOfOrigin}
+          />
         </FormField>
       </div>
 
@@ -307,10 +382,7 @@ function Step1Personal({
       {/* ID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="ID Type" required error={errors.idType}>
-          <select className={inputClass} value={form.idType} onChange={(e) => update('idType', e.target.value)}>
-            <option value="">Select ID Type</option>
-            {ID_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <SearchableSelect options={idTypeOptions} value={form.idType} onChange={(v) => update('idType', v)} placeholder="Select ID Type" />
         </FormField>
         <FormField label="ID Number" required error={errors.idNumber}>
           <input className={inputClass} value={form.idNumber} onChange={(e) => update('idNumber', e.target.value)} placeholder="e.g. 12345678901" />
@@ -354,37 +426,47 @@ function Step1Personal({
 
 /* ───────── Step 2: Employment ───────── */
 function Step2Employment({
-  form, errors, update, selectedStation,
+  form, errors, update, selectedStation, branchOptions,
+  roleNeedsRegion, roleNeedsBranch, roleNeedsStation,
 }: {
   form: FormData;
   errors: Partial<Record<keyof FormData, string>>;
   update: (field: keyof FormData, value: string) => void;
   selectedStation?: typeof stations[number];
+  branchOptions: SelectOption[];
+  roleNeedsRegion: boolean;
+  roleNeedsBranch: boolean;
+  roleNeedsStation: boolean;
 }) {
+  // Helper text based on role
+  const roleHint: Record<string, string> = {
+    admin: 'Full system access — no location assignment needed.',
+    regional_manager: 'Oversees all branches and stations within a region.',
+    branch_manager: 'Manages all stations under one or more branches.',
+    dealer: 'Operates a specific fuel station.',
+    supervisor: 'Manages day-to-day operations at a station.',
+    attendant: 'Works at a station pump.',
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-[var(--foreground)]">Employment Details</h3>
 
+      {/* Role first — drives everything else */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField label="Station" required error={errors.stationId}>
-          <select className={inputClass} value={form.stationId} onChange={(e) => update('stationId', e.target.value)}>
-            <option value="">Select Station</option>
-            {stations.map((s) => (
-              <option key={s.id} value={s.id}>{s.name} — {s.city}</option>
-            ))}
-          </select>
-        </FormField>
-
-        <FormField label="Dealer">
-          <input className={cn(inputClass, 'bg-[var(--secondary)]')} value={selectedStation?.dealerName ?? '—'} readOnly />
-        </FormField>
-
         <FormField label="Role" required error={errors.role}>
-          <select className={inputClass} value={form.role} onChange={(e) => update('role', e.target.value)}>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-            ))}
-          </select>
+          <SearchableSelect
+            options={roleOptions}
+            value={form.role}
+            onChange={(v) => {
+              update('role', v);
+              // Clear assignment fields when role changes
+              update('regionId', '');
+              update('branchId', '');
+              update('stationId', '');
+            }}
+            placeholder="Select Role"
+          />
         </FormField>
 
         <FormField label="Year of Employment">
@@ -392,12 +474,114 @@ function Step2Employment({
         </FormField>
       </div>
 
-      {selectedStation && (
-        <div className="rounded-lg bg-[var(--secondary)] p-4 text-sm text-[var(--muted-foreground)]">
-          <p><strong>Region:</strong> {selectedStation.region}</p>
-          <p><strong>Branch:</strong> {selectedStation.branch}</p>
-          <p><strong>Location:</strong> {selectedStation.address}, {selectedStation.city}, {selectedStation.state}</p>
-        </div>
+      {/* Role hint */}
+      {form.role && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3"
+        >
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            <strong>{ROLE_LABELS[form.role as Role]}:</strong> {roleHint[form.role]}
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── Conditional assignment fields based on role ── */}
+
+      {/* Regional Manager → pick a region */}
+      {roleNeedsRegion && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        >
+          <FormField label="Assign Region" required error={errors.regionId}>
+            <SearchableSelect
+              options={regionOptions}
+              value={form.regionId}
+              onChange={(v) => update('regionId', v)}
+              placeholder="Search regions…"
+            />
+          </FormField>
+          {form.regionId && (
+            <div className="rounded-lg bg-[var(--secondary)] p-3 text-sm text-[var(--muted-foreground)] self-end">
+              <p><strong>Region:</strong> {regions.find((r) => r.id === form.regionId)?.name}</p>
+              <p><strong>Branches:</strong> {regions.find((r) => r.id === form.regionId)?.branches.map((b) => b.name).join(', ')}</p>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Branch Manager → pick region (optional filter) + branch */}
+      {roleNeedsBranch && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        >
+          <FormField label="Filter by Region (optional)">
+            <SearchableSelect
+              options={regionOptions}
+              value={form.regionId}
+              onChange={(v) => { update('regionId', v); update('branchId', ''); }}
+              placeholder="All regions"
+            />
+          </FormField>
+          <FormField label="Assign Branch" required error={errors.branchId}>
+            <SearchableSelect
+              options={branchOptions}
+              value={form.branchId}
+              onChange={(v) => update('branchId', v)}
+              placeholder="Search branches…"
+            />
+          </FormField>
+        </motion.div>
+      )}
+
+      {/* Dealer / Supervisor / Attendant → pick station */}
+      {roleNeedsStation && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Assign Station" required error={errors.stationId}>
+              <SearchableSelect
+                options={stationOptions}
+                value={form.stationId}
+                onChange={(v) => update('stationId', v)}
+                placeholder="Search stations…"
+              />
+            </FormField>
+
+            {selectedStation && (
+              <FormField label="Dealer">
+                <input className={cn(inputClass, 'bg-[var(--secondary)]')} value={selectedStation.dealerName} readOnly />
+              </FormField>
+            )}
+          </div>
+
+          {selectedStation && (
+            <div className="rounded-lg bg-[var(--secondary)] p-4 text-sm text-[var(--muted-foreground)]">
+              <p><strong>Region:</strong> {selectedStation.region}</p>
+              <p><strong>Branch:</strong> {selectedStation.branch}</p>
+              <p><strong>Location:</strong> {selectedStation.address}, {selectedStation.city}, {selectedStation.state}</p>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Admin — no assignment needed */}
+      {form.role === 'admin' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-lg bg-[var(--secondary)] p-4 text-sm text-[var(--muted-foreground)] text-center"
+        >
+          Admin has full system access — no location assignment required.
+        </motion.div>
       )}
     </div>
   );
@@ -457,6 +641,10 @@ function Step4Review({
     </div>
   );
 
+  // Resolve assignment names
+  const assignedRegion = regions.find((r) => r.id === form.regionId);
+  const assignedBranch = regions.flatMap((r) => r.branches).find((b) => b.id === form.branchId);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-[var(--foreground)]">Review & Submit</h3>
@@ -480,10 +668,22 @@ function Step4Review({
 
       <Section title="Employment" stepNum={2}>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Field label="Station" value={selectedStation?.name ?? '—'} />
-          <Field label="Dealer" value={selectedStation?.dealerName ?? '—'} />
           <Field label="Role" value={form.role ? ROLE_LABELS[form.role as Role] : '—'} />
           <Field label="Year" value={form.yearOfEmployment} />
+          {form.role === 'regional_manager' && (
+            <Field label="Region" value={assignedRegion?.name ?? '—'} />
+          )}
+          {form.role === 'branch_manager' && (
+            <Field label="Branch" value={assignedBranch?.name ?? '—'} />
+          )}
+          {['dealer', 'supervisor', 'attendant'].includes(form.role) && (
+            <>
+              <Field label="Station" value={selectedStation?.name ?? '—'} />
+              <Field label="Dealer" value={selectedStation?.dealerName ?? '—'} />
+              <Field label="Branch" value={selectedStation?.branch ?? '—'} />
+              <Field label="Region" value={selectedStation?.region ?? '—'} />
+            </>
+          )}
         </div>
       </Section>
 
