@@ -74,7 +74,26 @@ const TEMPLATES: Template[] = [
   },
 ];
 
-function generateCertificatePDF(certification: CertificationData, template: Template) {
+// Load the NNPC logo as a base64 data URL for embedding in the PDF
+function loadLogoAsBase64(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('No canvas context'));
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('Failed to load logo'));
+    img.src = '/nnpc-logo.png';
+  });
+}
+
+async function generateCertificatePDF(certification: CertificationData, template: Template) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth(); // 297
   const pageHeight = doc.internal.pageSize.getHeight(); // 210
@@ -124,55 +143,65 @@ function generateCertificatePDF(certification: CertificationData, template: Temp
   doc.line(pageWidth - 14, pageHeight - 14, pageWidth - 14 - cornerLen, pageHeight - 14);
   doc.line(pageWidth - 14, pageHeight - 14, pageWidth - 14, pageHeight - 14 - cornerLen);
 
-  // Top decorative line
-  doc.setDrawColor(accent.r, accent.g, accent.b);
-  doc.setLineWidth(0.5);
-  doc.line(50, 30, pageWidth - 50, 30);
+  // NNPC Logo — centered at top
+  try {
+    const logoBase64 = await loadLogoAsBase64();
+    const logoH = 18;
+    const logoW = 18; // approximate square-ish for the NNPC emblem
+    doc.addImage(logoBase64, 'PNG', pageWidth / 2 - logoW / 2, 22, logoW, logoH);
+  } catch {
+    // If logo fails to load, continue without it
+  }
 
-  // "NNPC RETAIL LIMITED"
+  // "NNPC RETAIL LIMITED" — below logo
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(primary.r, primary.g, primary.b);
-  doc.text('NNPC RETAIL LIMITED', pageWidth / 2, 42, { align: 'center' });
+  doc.text('NNPC RETAIL LIMITED', pageWidth / 2, 48, { align: 'center' });
+
+  // Top decorative line
+  doc.setDrawColor(accent.r, accent.g, accent.b);
+  doc.setLineWidth(0.5);
+  doc.line(90, 52, pageWidth - 90, 52);
 
   // "CERTIFICATE" title
   doc.setFontSize(36);
   doc.setTextColor(primary.r, primary.g, primary.b);
-  doc.text('CERTIFICATE', pageWidth / 2, 60, { align: 'center' });
+  doc.text('CERTIFICATE', pageWidth / 2, 67, { align: 'center' });
 
   // Decorative line under title
   doc.setDrawColor(accent.r, accent.g, accent.b);
   doc.setLineWidth(0.8);
-  doc.line(90, 65, pageWidth - 90, 65);
+  doc.line(90, 72, pageWidth - 90, 72);
 
   // "This is to certify that"
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(13);
   doc.setTextColor(80, 80, 80);
-  doc.text('This is to certify that', pageWidth / 2, 78, { align: 'center' });
+  doc.text('This is to certify that', pageWidth / 2, 84, { align: 'center' });
 
   // Employee name
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(28);
   doc.setTextColor(primary.r, primary.g, primary.b);
-  doc.text(certification.employeeName, pageWidth / 2, 93, { align: 'center' });
+  doc.text(certification.employeeName, pageWidth / 2, 98, { align: 'center' });
 
   // Decorative line under name
   doc.setDrawColor(accent.r, accent.g, accent.b);
   doc.setLineWidth(0.5);
-  doc.line(80, 97, pageWidth - 80, 97);
+  doc.line(80, 102, pageWidth - 80, 102);
 
   // "has successfully completed"
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(13);
   doc.setTextColor(80, 80, 80);
-  doc.text('has successfully completed', pageWidth / 2, 108, { align: 'center' });
+  doc.text('has successfully completed', pageWidth / 2, 113, { align: 'center' });
 
   // Certification name
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(secondary.r, secondary.g, secondary.b);
-  doc.text(certification.certificationName, pageWidth / 2, 120, { align: 'center' });
+  doc.text(certification.certificationName, pageWidth / 2, 125, { align: 'center' });
 
   // Date formatting
   const formatDisplayDate = (dateStr: string) => {
@@ -184,20 +213,20 @@ function generateCertificatePDF(certification: CertificationData, template: Temp
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Issue Date: ${formatDisplayDate(certification.issueDate)}`, pageWidth / 2 - 45, 135, {
+  doc.text(`Issue Date: ${formatDisplayDate(certification.issueDate)}`, pageWidth / 2 - 45, 140, {
     align: 'center',
   });
-  doc.text(`Expiry Date: ${formatDisplayDate(certification.expiryDate)}`, pageWidth / 2 + 45, 135, {
+  doc.text(`Expiry Date: ${formatDisplayDate(certification.expiryDate)}`, pageWidth / 2 + 45, 140, {
     align: 'center',
   });
 
   // Certificate ID
   doc.setFontSize(9);
   doc.setTextColor(140, 140, 140);
-  doc.text(`Certificate ID: ${certification.id}`, pageWidth / 2, 145, { align: 'center' });
+  doc.text(`Certificate ID: ${certification.id}`, pageWidth / 2, 150, { align: 'center' });
 
   // Signature lines
-  const sigY = 170;
+  const sigY = 172;
   const sigWidth = 60;
 
   // Left signature
@@ -220,7 +249,7 @@ function generateCertificatePDF(certification: CertificationData, template: Temp
   // Bottom decorative line
   doc.setDrawColor(accent.r, accent.g, accent.b);
   doc.setLineWidth(0.5);
-  doc.line(50, pageHeight - 30, pageWidth - 50, pageHeight - 30);
+  doc.line(50, pageHeight - 25, pageWidth - 50, pageHeight - 25);
 
   // Save
   const safeName = certification.employeeName.replace(/\s+/g, '_');
@@ -230,10 +259,10 @@ function generateCertificatePDF(certification: CertificationData, template: Temp
 export function CertificateModal({ isOpen, onClose, certification }: Props) {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('classic-green');
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const template = TEMPLATES.find((t) => t.id === selectedTemplate);
     if (!template) return;
-    generateCertificatePDF(certification, template);
+    await generateCertificatePDF(certification, template);
   };
 
   return (
@@ -303,14 +332,16 @@ export function CertificateModal({ isOpen, onClose, certification }: Props) {
                       {/* Preview */}
                       <div
                         className={cn(
-                          'rounded-md h-20 mb-2 flex flex-col items-center justify-center gap-1 relative overflow-hidden',
+                          'rounded-md h-24 mb-2 flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
                           template.previewBg
                         )}
                       >
-                        <div
-                          className={cn('h-1.5 w-16 rounded-full opacity-60', template.previewAccent)}
+                        <img
+                          src="/nnpc-logo.png"
+                          alt="NNPC"
+                          className="h-7 w-auto object-contain drop-shadow-md"
                         />
-                        <p className="text-[10px] font-bold text-white/90 tracking-wide">
+                        <p className="text-[10px] font-bold text-white/90 tracking-wide mt-0.5">
                           CERTIFICATE
                         </p>
                         <div
