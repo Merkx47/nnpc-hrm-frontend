@@ -30,6 +30,10 @@ import { StationsPage } from '@/pages/stations';
 import { NotificationsPage } from '@/pages/notifications';
 import { SettingsPage } from '@/pages/settings';
 import { DocumentLibraryPage } from '@/pages/documents';
+import { ApprovalsQueuePage } from '@/pages/approvals/pending';
+import { MyRequestsPage } from '@/pages/approvals/my-requests';
+import { ApprovalDetailPage } from '@/pages/approvals/detail';
+import { useApprovalStore } from '@/lib/approval-store';
 import { Toaster } from 'sonner';
 
 // Placeholder component for pages not yet built
@@ -50,6 +54,8 @@ function ProtectedRoutes() {
   const { currentUser, notifications, setNotifications } = useAppStore();
   const [location] = useLocation();
 
+  const initializeMockData = useApprovalStore((s) => s.initializeMockData);
+
   // Auto-load notifications when user is logged in but notifications are empty
   // (e.g. after a page refresh — notifications are not persisted in localStorage)
   useEffect(() => {
@@ -59,6 +65,13 @@ function ProtectedRoutes() {
       }).catch(() => {});
     }
   }, [currentUser, notifications.length, setNotifications]);
+
+  // Initialize approval mock data
+  useEffect(() => {
+    if (currentUser) {
+      initializeMockData();
+    }
+  }, [currentUser, initializeMockData]);
 
   if (!currentUser) {
     return <Redirect to="/login" />;
@@ -105,6 +118,12 @@ function ProtectedRoutes() {
         <Route path="/operations/attendance" component={AttendancePage} />
         <Route path="/operations/activity-log" component={ActivityLogPage} />
         <Route path="/operations/incidents" component={IncidentsPage} />
+
+        {/* Approvals */}
+        <Route path="/approvals">{() => <Redirect to="/approvals/pending" />}</Route>
+        <Route path="/approvals/pending" component={ApprovalsQueuePage} />
+        <Route path="/approvals/my-requests" component={MyRequestsPage} />
+        <Route path="/approvals/:id" component={ApprovalDetailPage} />
 
         {/* Compensation */}
         <Route path="/compensation">{() => <Redirect to="/compensation/salary" />}</Route>

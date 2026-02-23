@@ -5,6 +5,7 @@ import {
   ClipboardCheck, Filter, Plus, X, Star, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { usePermission } from '@/lib/rbac';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
@@ -30,6 +31,7 @@ const PAGE_SIZE = 10;
 export function PerformanceReviewsPage() {
   const canViewKpi = usePermission('view_kpi');
   const canManageEvaluations = usePermission('manage_evaluations');
+  const submitApproval = useSubmitApproval();
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -100,8 +102,20 @@ export function PerformanceReviewsPage() {
       });
       return;
     }
-    toast.success('Review submitted', {
-      description: `Performance review created for ${formEmployee}`,
+    submitApproval({
+      actionType: 'create_review',
+      actionLabel: 'Performance Review',
+      payload: {
+        employeeName: formEmployee,
+        period: formPeriod,
+        sales: Number(formSales),
+        punctuality: Number(formPunctuality),
+        customerService: Number(formCustomerService),
+        teamwork: Number(formTeamwork),
+        training: Number(formTraining),
+        comments: formComments,
+      },
+      entityName: formEmployee,
     });
     setShowForm(false);
     setFormEmployee('');

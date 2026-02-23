@@ -5,6 +5,7 @@ import {
   ArrowLeftRight, Send, Calendar, Filter, X, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { usePermission } from '@/lib/rbac';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -96,6 +97,7 @@ const inputClass = 'w-full rounded-lg border border-[var(--input)] bg-[var(--bac
 
 export function TransfersPage() {
   const canApproveTransfer = usePermission('approve_transfer');
+  const submitApproval = useSubmitApproval();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -143,8 +145,22 @@ export function TransfersPage() {
       toast.error('Please fill all required fields');
       return;
     }
-    toast.success('Transfer request submitted', {
-      description: `Transfer request for ${selectedEmp?.firstName} ${selectedEmp?.lastName} has been submitted.`,
+    const toStationObj = stations.find((s) => s.id === toStation);
+    submitApproval({
+      actionType: 'create_transfer',
+      actionLabel: 'Employee Transfer',
+      stationId: selectedEmp?.stationId,
+      payload: {
+        employeeId: selectedEmployee,
+        employeeName: `${selectedEmp?.firstName} ${selectedEmp?.lastName}`,
+        fromStationId: selectedEmp?.stationId,
+        fromStationName: fromStation?.name ?? '',
+        toStationId: toStation,
+        toStationName: toStationObj?.name ?? toStation,
+        reason,
+        effectiveDate,
+      },
+      entityName: `${selectedEmp?.firstName} ${selectedEmp?.lastName}`,
     });
     setSelectedEmployee('');
     setToStation('');

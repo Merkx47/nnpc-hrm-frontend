@@ -5,6 +5,7 @@ import {
   Target, TrendingUp, Award, Filter, Plus, X, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { usePermission } from '@/lib/rbac';
 import { useAppStore } from '@/lib/store';
 import { getFilteredStationIds } from '@/data/dashboard-data';
@@ -41,6 +42,7 @@ const PAGE_SIZE = 10;
 export function SalesTargetsPage() {
   const canViewKpi = usePermission('view_kpi');
   const canManageEvaluations = usePermission('manage_evaluations');
+  const submitApproval = useSubmitApproval();
   const { selectedRegionId, selectedBranchId, selectedStationId } = useAppStore();
 
   // Global filter: compute allowed station IDs
@@ -125,8 +127,18 @@ export function SalesTargetsPage() {
       });
       return;
     }
-    toast.success('Sales target created', {
-      description: `Target set for ${formEmployee} - ${formProduct}`,
+    submitApproval({
+      actionType: 'create_sales_target',
+      actionLabel: 'Set Sales Target',
+      payload: {
+        employeeName: formEmployee,
+        product: formProduct,
+        targetAmount: Number(formAmount),
+        period: formPeriod,
+        startDate: formStartDate,
+        endDate: formEndDate,
+      },
+      entityName: `${formEmployee} — ${formProduct}`,
     });
     setShowForm(false);
     setFormEmployee('');

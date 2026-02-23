@@ -1,4 +1,4 @@
-import type { Role, ShiftType, LeaveType, IncidentType, Severity, ApplicationStatus, TrainingStatus, NotificationType } from '@/types';
+import type { Role, ShiftType, LeaveType, IncidentType, Severity, ApplicationStatus, TrainingStatus, NotificationType, ApprovalStatus, ApprovalActionType } from '@/types';
 
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Super Admin',
@@ -129,6 +129,35 @@ export const LUBRICANT_PRODUCTS = [
   'NNPC Transmission Fluid',
 ] as const;
 
+// ── Approval Queue Labels & Colors ────────────────────────────────
+
+export const APPROVAL_STATUS_LABELS: Record<ApprovalStatus, string> = {
+  pending: 'Pending Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  returned: 'Returned',
+};
+
+export const APPROVAL_STATUS_COLORS: Record<ApprovalStatus, string> = {
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  rejected: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  returned: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+};
+
+export const APPROVAL_ACTION_LABELS: Record<ApprovalActionType, string> = {
+  create_employee: 'New Employee',
+  edit_employee: 'Edit Employee',
+  transfer_employee: 'Quick Transfer',
+  create_shift: 'Shift Assignment',
+  create_leave_request: 'Leave Request',
+  create_transfer: 'Employee Transfer',
+  create_training_assignment: 'Training Assignment',
+  create_incident: 'Incident Report',
+  create_review: 'Performance Review',
+  create_sales_target: 'Sales Target',
+};
+
 // Navigation items with role-based visibility
 export interface NavItem {
   label: string;
@@ -201,6 +230,16 @@ export const SIDEBAR_NAV: NavItem[] = [
       { label: 'Attendance', href: '/operations/attendance', icon: 'CalendarCheck', roles: ['admin', 'dealer', 'supervisor', 'regional_manager', 'branch_manager'] },
       { label: 'Activity Log', href: '/operations/activity-log', icon: 'Activity', roles: ['admin', 'dealer', 'supervisor', 'attendant', 'regional_manager', 'branch_manager'] },
       { label: 'Incidents', href: '/operations/incidents', icon: 'AlertTriangle', roles: ['admin', 'dealer', 'supervisor', 'attendant', 'regional_manager', 'branch_manager'] },
+    ],
+  },
+  {
+    label: 'Approvals',
+    href: '/approvals',
+    icon: 'ShieldCheck',
+    roles: ['admin', 'regional_manager', 'branch_manager', 'dealer', 'supervisor', 'attendant'],
+    children: [
+      { label: 'Pending Review', href: '/approvals/pending', icon: 'ClipboardCheck', roles: ['admin', 'regional_manager', 'branch_manager', 'dealer', 'supervisor'] },
+      { label: 'My Requests', href: '/approvals/my-requests', icon: 'ClipboardList', roles: ['admin', 'regional_manager', 'branch_manager', 'dealer', 'supervisor', 'attendant'] },
     ],
   },
   {

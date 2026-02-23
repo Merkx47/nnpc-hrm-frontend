@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { getFilteredStationIds } from '@/data/dashboard-data';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
@@ -49,6 +50,7 @@ const tabs: { key: Tab; label: string }[] = [
 export function AttendancePage() {
   const { selectedRegionId, selectedBranchId, selectedStationId, currentUser } = useAppStore();
   const isAttendant = currentUser?.role === 'attendant';
+  const submitApproval = useSubmitApproval();
   const [activeTab, setActiveTab] = useState<Tab>('attendance');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [attendancePage, setAttendancePage] = useState(1);
@@ -144,8 +146,13 @@ export function AttendancePage() {
   };
 
   const handleRequestLeave = () => {
-    toast.success('Leave request submitted', {
-      description: 'Your leave request has been submitted for approval.',
+    submitApproval({
+      actionType: 'create_leave_request',
+      actionLabel: 'Leave Request',
+      payload: {
+        type: 'personal',
+        reason: 'Leave request submitted via attendance page',
+      },
     });
   };
 

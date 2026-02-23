@@ -540,6 +540,23 @@ export function X(props: IconProps) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  ShieldCheck – shield with checkmark (Approvals)                    */
+/* ------------------------------------------------------------------ */
+export function ShieldCheck(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path
+        d="M12 2l8 4v6c0 5.25-3.5 8.25-8 10-4.5-1.75-8-4.75-8-10V6l8-4Z"
+        fill="currentColor"
+        opacity="0.15"
+      />
+      <path d="M12 2l8 4v6c0 5.25-3.5 8.25-8 10-4.5-1.75-8-4.75-8-10V6l8-4Z" />
+      <polyline points="8.5,12 11,14.5 16,9.5" />
+    </Icon>
+  );
+}
+
 /* ================================================================== */
 /*  Icon Map — lookup by string name                                   */
 /* ================================================================== */
@@ -575,4 +592,5 @@ export const iconMap: Record<string, (props: IconProps) => JSX.Element> = {
   ChevronLeft,
   ChevronRight,
   X,
+  ShieldCheck,
 };

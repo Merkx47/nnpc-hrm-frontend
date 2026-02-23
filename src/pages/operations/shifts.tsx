@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { usePermission } from '@/lib/rbac';
 import { getFilteredStationIds } from '@/data/dashboard-data';
 import { PageHeader } from '@/components/shared/page-header';
@@ -86,6 +87,7 @@ const MONTH_NAMES = [
 export function ShiftsPage() {
   const { selectedRegionId, selectedBranchId, selectedStationId, currentUser } = useAppStore();
   const canManageShifts = usePermission('manage_shifts');
+  const submitApproval = useSubmitApproval();
   const isAttendant = currentUser?.role === 'attendant';
 
   // Global filter: compute allowed station IDs
@@ -180,8 +182,21 @@ export function ShiftsPage() {
       toast.error('Please fill all fields');
       return;
     }
-    toast.success('Shift assigned successfully', {
-      description: `Shift has been assigned for ${assignDate}.`,
+    const emp = employees.find((e) => e.id === assignEmployee);
+    const stn = stations.find((s) => s.id === assignStation);
+    submitApproval({
+      actionType: 'create_shift',
+      actionLabel: 'Assign Shift',
+      stationId: assignStation,
+      payload: {
+        employeeId: assignEmployee,
+        employeeName: emp ? `${emp.firstName} ${emp.lastName}` : assignEmployee,
+        date: assignDate,
+        shift: assignShift,
+        station: stn?.name ?? assignStation,
+        pump: assignPump,
+      },
+      entityName: emp ? `${emp.firstName} ${emp.lastName}` : 'Employee',
     });
     setShowAssignForm(false);
     setAssignEmployee('');

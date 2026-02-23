@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, User, Briefcase, FolderOpen, ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { PageHeader } from '@/components/shared/page-header';
 import { SearchableSelect } from '@/components/shared/searchable-select';
 import type { SelectOption } from '@/components/shared/searchable-select';
@@ -133,6 +133,7 @@ const stationOptions: SelectOption[] = stations.map((s) => ({
 
 export function AddEmployeePage() {
   const [, setLocation] = useLocation();
+  const submitApproval = useSubmitApproval();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
@@ -205,8 +206,11 @@ export function AddEmployeePage() {
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleSubmit = () => {
-    toast.success('Employee created successfully', {
-      description: `${form.firstName} ${form.lastName} has been added to the system.`,
+    submitApproval({
+      actionType: 'create_employee',
+      actionLabel: 'Create Employee',
+      payload: { ...form },
+      entityName: `${form.firstName} ${form.lastName}`,
     });
     setLocation('/employees');
   };

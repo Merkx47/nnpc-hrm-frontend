@@ -300,3 +300,47 @@ export interface User {
   employee: Employee;
   role: Role;
 }
+
+// ── Maker-Checker Approval Types ──────────────────────────────────
+
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'returned';
+
+export type ApprovalActionType =
+  | 'create_employee'
+  | 'edit_employee'
+  | 'transfer_employee'
+  | 'create_shift'
+  | 'create_leave_request'
+  | 'create_transfer'
+  | 'create_training_assignment'
+  | 'create_incident'
+  | 'create_review'
+  | 'create_sales_target';
+
+export interface ApprovalNote {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole: Role;
+  note: string;
+  action: 'submitted' | 'approved' | 'rejected' | 'returned' | 'resubmitted';
+  createdAt: string;
+}
+
+export interface ApprovalRequest {
+  id: string;
+  actionType: ApprovalActionType;
+  actionLabel: string;
+  submittedById: string;
+  submittedByName: string;
+  submittedByRole: Role;
+  submittedAt: string;
+  reviewerRole: Role;
+  reviewerId?: string;
+  reviewerName?: string;
+  stationId?: string;
+  payload: Record<string, unknown>;
+  status: ApprovalStatus;
+  notes: ApprovalNote[];
+  updatedAt: string;
+}

@@ -6,6 +6,7 @@ import {
   Calendar, Users, BookOpen, AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { usePermission } from '@/lib/rbac';
 import { useAppStore } from '@/lib/store';
 import { PageHeader } from '@/components/shared/page-header';
@@ -28,6 +29,7 @@ const PAGE_SIZE = 10;
 
 export function AssignTrainingPage() {
   const canManageTraining = usePermission('manage_training');
+  const submitApproval = useSubmitApproval();
   const { currentUser } = useAppStore();
   const isAttendant = currentUser?.role === 'attendant';
 
@@ -96,8 +98,21 @@ export function AssignTrainingPage() {
     }
 
     const moduleName = trainingModules.find((m) => m.id === selectedModule)?.name;
-    toast.success('Training assigned successfully', {
-      description: `${moduleName} assigned to ${selectedEmployees.length} employee${selectedEmployees.length > 1 ? 's' : ''} with deadline ${formatDate(deadline)}.`,
+    const employeeNames = selectedEmployees.map((id) => {
+      const emp = employees.find((e) => e.id === id);
+      return emp ? `${emp.firstName} ${emp.lastName}` : id;
+    });
+    submitApproval({
+      actionType: 'create_training_assignment',
+      actionLabel: 'Assign Training',
+      payload: {
+        moduleId: selectedModule,
+        moduleName,
+        employeeIds: selectedEmployees,
+        employeeNames,
+        deadline,
+      },
+      entityName: moduleName ?? 'Training',
     });
 
     setSelectedModule('');

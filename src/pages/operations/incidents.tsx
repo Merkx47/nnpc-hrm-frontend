@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, Plus, Shield, CheckCircle, Search, Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { getFilteredStationIds } from '@/data/dashboard-data';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
@@ -41,6 +42,7 @@ const inputClass =
 
 export function IncidentsPage() {
   const { selectedRegionId, selectedBranchId, selectedStationId } = useAppStore();
+  const submitApproval = useSubmitApproval();
 
   // Global filter: compute allowed station IDs
   const globalStationIds = useMemo(
@@ -122,8 +124,18 @@ export function IncidentsPage() {
       toast.error('Please fill all required fields');
       return;
     }
-    toast.success('Incident reported successfully', {
-      description: 'The incident report has been submitted for review.',
+    const stationObj = stations.find((s) => s.id === formStation);
+    submitApproval({
+      actionType: 'create_incident',
+      actionLabel: 'Report Incident',
+      stationId: formStation,
+      payload: {
+        type: formType,
+        severity: formSeverity,
+        description: formDescription,
+        date: formDate,
+        stationName: stationObj?.name ?? formStation,
+      },
     });
     setFormStation('');
     setFormType('');

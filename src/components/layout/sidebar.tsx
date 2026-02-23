@@ -1,10 +1,12 @@
 import { useLocation, Link } from 'wouter';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
+import { useApprovalStore } from '@/lib/approval-store';
+import { getUserScope, isRequestInScope } from '@/lib/scope';
 import { NNPCLogo, NNPCIcon } from '@/components/brand/nnpc-logo';
 import { SIDEBAR_NAV } from '@/lib/constants';
 import { iconMap, ChevronLeft, ChevronRight, X } from '@/components/icons';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -12,9 +14,25 @@ export function Sidebar() {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const role = currentUser?.role;
+  const approvalRequests = useApprovalStore((s) => s.requests);
+
+  // Compute pending approval count for the current user's role/scope
+  const pendingCount = useMemo(() => {
+    if (!currentUser || !role) return 0;
+    const scope = getUserScope(currentUser);
+    return approvalRequests.filter(
+      (r) => r.status === 'pending' && r.reviewerRole === role && isRequestInScope(r.stationId, scope)
+    ).length;
+  }, [approvalRequests, currentUser, role]);
+
   if (!role) return null;
 
-  const filteredNav = SIDEBAR_NAV.filter((item) => item.roles.includes(role));
+  // Inject dynamic pending count badge into the Approvals nav item
+  const filteredNav = SIDEBAR_NAV.filter((item) => item.roles.includes(role)).map((item) =>
+    item.label === 'Approvals' && pendingCount > 0
+      ? { ...item, badge: String(pendingCount) }
+      : item
+  );
 
   const toggleExpanded = (label: string) => {
     setExpandedItems((prev) =>
@@ -69,6 +87,11 @@ export function Sidebar() {
                     {!sidebarCollapsed && (
                       <>
                         <span className="flex-1 text-left">{item.label}</span>
+                        {item.badge && !isExpanded && (
+                          <span className="rounded-full bg-red-500 text-white px-1.5 py-0.5 text-[10px] font-bold leading-none min-w-[18px] text-center">
+                            {item.badge}
+                          </span>
+                        )}
                         <ChevronRight
                           className={cn(
                             'h-4 w-4 transition-transform duration-200',

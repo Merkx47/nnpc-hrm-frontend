@@ -9,6 +9,7 @@ import {
   CheckCircle, XCircle, AlertCircle, ChevronRight, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSubmitApproval } from '@/lib/use-submit-approval';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { ROLE_LABELS, ROLE_COLORS, EMPLOYMENT_STATUS_COLORS, TRAINING_STATUS_COLORS, SEVERITY_COLORS, INCIDENT_LABELS } from '@/lib/constants';
 import { formatDate, formatNaira, formatPhone, getInitials } from '@/lib/formatters';
@@ -54,6 +55,7 @@ function InfoField({ label, value }: { label: string; value: string | undefined 
 export function EmployeeDetailPage() {
   const [, params] = useRoute('/employees/:id');
   const [, setLocation] = useLocation();
+  const submitApproval = useSubmitApproval();
   const [activeTab, setActiveTab] = useState<TabId>('personal');
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferStation, setTransferStation] = useState('');
@@ -261,8 +263,19 @@ export function EmployeeDetailPage() {
                       return;
                     }
                     const targetStation = stations.find((s) => s.id === transferStation);
-                    toast.success('Transfer initiated', {
-                      description: `${employee.firstName} ${employee.lastName} will be transferred to ${targetStation?.name ?? transferStation}.`,
+                    submitApproval({
+                      actionType: 'transfer_employee',
+                      actionLabel: 'Transfer Employee',
+                      stationId: employee.stationId,
+                      payload: {
+                        employeeId: employee.id,
+                        employeeName: `${employee.firstName} ${employee.lastName}`,
+                        fromStationId: employee.stationId,
+                        fromStationName: station?.name ?? employee.stationId,
+                        toStationId: transferStation,
+                        toStationName: targetStation?.name ?? transferStation,
+                      },
+                      entityName: `${employee.firstName} ${employee.lastName}`,
                     });
                     setShowTransferModal(false);
                     setTransferStation('');
